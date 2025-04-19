@@ -16,15 +16,189 @@
         :root {
             --bg-base: #16191d; --bg-surface: #1e2228; --bg-card: #252A30; --text-primary: #e8e8e8; --text-secondary: #a8b2c0; --text-tertiary: #6f7b8e; --accent: #00BFA6; --border-color: #30363e; --grid-line-color: rgba(76, 86, 100, 0.5); --shadow-color: transparent;
             --c1: #5B8FF9; --c2: #61DDAA; --c3: #F6BD16; --c4: #65789B; --c5: #E8684A; --c6: #9270CA; --c7: #FF9D4D; --c8: #269A99; --c9: #FF99C3; --c10: #A8B2C0;
-            --font-family: 'Inter', sans-serif; --sidebar-width: 240px; --header-height: 65px; --content-padding: 35px; --card-padding: 25px; --card-radius: 8px; --history-bar-opacity: 0.45;
+            --font-family: 'Inter', sans-serif; --sidebar-width: 240px; --sidebar-width-collapsed: 70px;--header-height: 65px; --content-padding: 35px; --card-padding: 25px; --card-radius: 8px; --history-bar-opacity: 0.45;
         }
 
-        /* --- Base, Layout, Sidebar --- */
-         * { box-sizing: border-box; margin: 0; padding: 0; } html, body { height: 100%; overflow: hidden; } body { font-family: var(--font-family); background-color: var(--bg-base); color: var(--text-primary); line-height: 1.6; font-size: 14px; display: flex; } button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; } ul { list-style: none; } a { color: inherit; text-decoration: none; } svg.feather { width: 18px; height: 18px; stroke-width: 2; vertical-align: middle; margin-right: 10px; color: var(--text-secondary); }
-         .sidebar { width: var(--sidebar-width); background-color: var(--bg-surface); padding: 30px 20px; flex-shrink: 0; display: flex; flex-direction: column; height: 100vh; border-right: 1px solid var(--border-color); } .main-area { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; } .main-content-wrapper { flex-grow: 1; overflow-y: auto; padding: var(--content-padding); display: flex; flex-direction: column; gap: var(--content-padding); }
-         .sidebar-brand { font-size: 1.3rem; font-weight: 700; margin-bottom: 35px; padding: 0 5px; color: var(--text-primary); } .sidebar-nav ul { display: flex; flex-direction: column; gap: 8px; } .sidebar-nav a { display: flex; align-items: center; padding: 12px 15px; border-radius: 6px; font-weight: 500; font-size: 0.95rem; color: var(--text-secondary); transition: background-color 0.2s ease, color 0.2s ease, border-left 0.2s ease; position: relative; border-left: 3px solid transparent; } .sidebar-nav a:hover { background-color: var(--bg-card); color: var(--text-primary); } .sidebar-nav a.active { background-color: rgba(0, 191, 166, 0.1); color: var(--accent); font-weight: 600; border-left: 3px solid var(--accent); } .sidebar-nav a.active svg { color: var(--accent); }
-         .coming-soon-badge { font-size: 0.6rem; font-weight: 500; background-color: var(--text-tertiary); color: var(--bg-surface); padding: 1px 5px; border-radius: 3px; margin-left: auto; line-height: 1.1; text-transform: uppercase; letter-spacing: 0.4px; } .sidebar-nav a:hover .coming-soon-badge { background-color: var(--text-secondary); color: var(--bg-base); }
+        /* --- Base, Layout, Sidebar (MODIFIED FOR COLLAPSIBLE) --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; } html, body { height: 100%; overflow: hidden; } body { font-family: var(--font-family); background-color: var(--bg-base); color: var(--text-primary); line-height: 1.6; font-size: 14px; display: flex; transition: padding-left 0.3s ease-in-out; /* Add transition for main area adjustment if needed, though flexbox might handle it */ } button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; } ul { list-style: none; } a { color: inherit; text-decoration: none; } svg.feather { width: 18px; height: 18px; stroke-width: 2; vertical-align: middle; color: var(--text-secondary); /* Icon color */ }
 
+        /* Sidebar - Collapsed by Default */
+        .sidebar {
+            width: var(--sidebar-width-collapsed); /* Default collapsed width */
+            background-color: var(--bg-surface);
+            padding: 20px 0; /* Reduced vertical padding, no horizontal padding */
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            border-right: 1px solid var(--border-color);
+            transition: width 0.3s ease-in-out; /* Smooth width transition */
+            overflow-x: hidden; /* Hide horizontal overflow */
+        }
+
+        .sidebar-brand {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 25px; /* Slightly reduced margin */
+            padding: 0 10px; /* Minimal padding */
+            color: var(--text-primary);
+            text-align: center; /* Center brand when collapsed */
+            white-space: nowrap; /* Prevent wrapping */
+            overflow: hidden; /* Hide text overflow */
+            /* Optional: Show only an icon when collapsed - requires HTML change */
+        }
+
+        .sidebar-nav ul {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 0 5px; /* Minimal padding around list */
+        }
+
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Center icon horizontally when collapsed */
+            padding: 12px 10px; /* Vertical padding, minimal horizontal */
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            transition: background-color 0.2s ease, color 0.2s ease, border-left 0.2s ease;
+            position: relative;
+            border-left: 3px solid transparent;
+            overflow: hidden; /* Hide overflowing content (text) */
+            white-space: nowrap; /* Keep icon and text on one line */
+        }
+
+        .sidebar-nav a .nav-text {
+            display: none; /* Hide text by default */
+            margin-left: 10px; /* Space between icon and text */
+            opacity: 0; /* Start hidden for transition */
+            transition: opacity 0.2s ease-in-out 0.1s; /* Fade in delayed */
+        }
+
+        .sidebar-nav a svg.feather {
+            margin-right: 0; /* No margin when only icon is shown */
+            flex-shrink: 0; /* Prevent icon shrinking */
+        }
+
+        .sidebar-nav a:hover {
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+        }
+        .sidebar-nav a:hover svg.feather {
+            color: var(--text-primary); /* Ensure icon color changes on hover */
+        }
+
+        .sidebar-nav a.active {
+            background-color: rgba(0, 191, 166, 0.1);
+            color: var(--accent);
+            font-weight: 600;
+            border-left-color: var(--accent);
+        }
+
+        .sidebar-nav a.active svg.feather {
+            color: var(--accent);
+        }
+
+        .coming-soon-badge {
+            font-size: 0.6rem;
+            font-weight: 500;
+            background-color: var(--text-tertiary);
+            color: var(--bg-surface);
+            padding: 1px 5px;
+            border-radius: 3px;
+            margin-left: auto;
+            line-height: 1.1;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            display: none; /* Hide by default */
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out 0.1s;
+        }
+
+        /* Sidebar Toggle Button */
+        .sidebar-toggle {
+            margin-top: auto; /* Push to the bottom */
+            padding: 15px 0; /* Padding top/bottom */
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+            cursor: pointer;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+        .sidebar-toggle svg {
+            width: 20px;
+            height: 20px;
+            margin: 0; /* Reset icon margin */
+            color: var(--text-secondary);
+            transition: transform 0.3s ease, color 0.2s ease;
+            display: block; /* Center icon */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .sidebar-toggle:hover svg {
+            color: var(--text-primary);
+        }
+
+        /* --- Styles when Sidebar is EXPANDED --- */
+        /* Apply this class to the BODY element via JS */
+        body.sidebar-expanded .sidebar {
+            width: var(--sidebar-width); /* Expand width */
+            padding: 30px 20px; /* Restore original padding */
+        }
+
+        body.sidebar-expanded .sidebar-brand {
+            text-align: left; /* Align text left */
+            padding: 0 5px; /* Restore padding */
+        }
+
+        body.sidebar-expanded .sidebar-nav ul {
+            padding: 0; /* Remove specific list padding */
+        }
+
+        body.sidebar-expanded .sidebar-nav a {
+            justify-content: flex-start; /* Align items left */
+            padding: 12px 15px; /* Restore original padding */
+        }
+
+        body.sidebar-expanded .sidebar-nav a .nav-text {
+            display: inline; /* Show text */
+            opacity: 1; /* Make visible */
+            margin-right: auto; /* Push badge to the right */
+        }
+
+        body.sidebar-expanded .sidebar-nav a svg.feather {
+            margin-right: 10px; /* Restore margin */
+        }
+
+        body.sidebar-expanded .coming-soon-badge {
+            display: inline-block; /* Show badge */
+            opacity: 1;
+        }
+
+        /* Optional: Adjust toggle icon when expanded */
+        body.sidebar-expanded .sidebar-toggle svg {
+            /* transform: rotate(180deg); */ /* Example: if using a single arrow */
+        }
+
+        /* --- Main Area Adjustment --- */
+        .main-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .main-content-wrapper {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: var(--content-padding);
+            display: flex;
+            flex-direction: column;
+            gap: var(--content-padding);
+        }
+/* --- End Layout Modifications --- */
         /* --- Controls, Core Layout --- */
          .main-content-header-controls { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; } .month-navigator { display: flex; align-items: center; gap: 12px; } .month-navigator button { font-size: 1.3rem; color: var(--text-secondary); transition: all 0.2s ease; line-height: 1; padding: 6px; border-radius: 6px; } .month-navigator button:hover:not(:disabled) { color: var(--text-primary); background-color: var(--bg-card); } .month-navigator button:disabled { color: var(--text-tertiary); cursor: not-allowed; background-color: transparent; } .current-month { font-size: 1.3rem; font-weight: 600; color: var(--text-primary); min-width: 220px; /* Increased width for cycle display */ text-align: center; } .total-spend { text-align: right; } .total-spend-label { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.6px;} .total-spend-amount { font-size: 1.7rem; font-weight: 700; color: var(--accent); line-height: 1.2; }
          .dashboard-core { display: grid; grid-template-columns: 3fr 2fr; gap: var(--content-padding); flex-grow: 1; min-height: 0; } .graph-container, .category-list-container { background-color: var(--bg-card); border-radius: var(--card-radius); padding: var(--card-padding); display: flex; flex-direction: column; box-shadow: none; border: 1px solid var(--border-color); overflow: hidden; }
@@ -78,12 +252,12 @@
         }
 
         /* --- Styling for Feather Icons in category list --- */
-        .category-item i[data-feather] {
+        .category-item svg.feather { /* <-- CORRECTED SELECTOR */
             color: var(--inner-color); /* Use the color variable from the parent li */
             margin-right: 14px;     /* Spacing between icon and name */
             flex-shrink: 0;         /* Prevent icon from shrinking */
-            /* Size and stroke are set via feather.replace() in JS for consistency */
             vertical-align: middle; /* Adjust vertical alignment if needed */
+            /* Feather SVGs use 'currentColor' for stroke by default, so setting 'color' works */
         }
 
         .category-name {
@@ -243,19 +417,27 @@
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="sidebar-brand">Expense Tracker</div> <!-- Updated Name -->
-        <nav class="sidebar-nav">
-            <ul>
-                <li><a href="#" class="active"><i data-feather="grid"></i>Dashboard</a></li>
-                <li><a href="#"><i data-feather="pie-chart"></i>Reports <span class="coming-soon-badge">Soon</span></a></li>
-                <li><a href="#"><i data-feather="list"></i>Transactions <span class="coming-soon-badge">Soon</span></a></li>
-                <li><a href="#"><i data-feather="target"></i>Budgets <span class="coming-soon-badge">Soon</span></a></li>
-                <li><a href="#"><i data-feather="settings"></i>Settings <span class="coming-soon-badge">Soon</span></a></li>
-            </ul>
-        </nav>
-    </aside>
+<!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">Expense Tracker</div> <!-- Updated Name -->
+            <nav class="sidebar-nav">
+                <ul>
+                    <!-- MODIFIED LINKS: Wrap text in <span class="nav-text"> -->
+                    <li><a href="#" class="active"><i data-feather="grid"></i><span class="nav-text">Dashboard</span></a></li>
+                    <li><a href="#"><i data-feather="pie-chart"></i><span class="nav-text">Reports</span> <span class="coming-soon-badge">Soon</span></a></li>
+                    <li><a href="#"><i data-feather="list"></i><span class="nav-text">Transactions</span> <span class="coming-soon-badge">Soon</span></a></li>
+                    <li><a href="#"><i data-feather="target"></i><span class="nav-text">Budgets</span> <span class="coming-soon-badge">Soon</span></a></li>
+                    <li><a href="#"><i data-feather="settings"></i><span class="nav-text">Settings</span> <span class="coming-soon-badge">Soon</span></a></li>
+                </ul>
+            </nav>
+
+            <!-- ADD THIS TOGGLE BUTTON -->
+            <div class="sidebar-toggle" id="sidebar-toggle-button" title="Toggle Sidebar">
+                <i data-feather="chevrons-right"></i> <!-- Initial icon for collapsed state -->
+            </div>
+            <!-- End Toggle Button -->
+
+        </aside>
 
     <!-- Main Area -->
     <main class="main-area">
@@ -308,6 +490,61 @@
         const listContainerHeader = document.getElementById('list-header');
         const graphContainerHeader = document.getElementById('graph-header');
         const chartWrapperElement = document.querySelector('.chart-wrapper');
+
+        // --- DOM Elements ---
+        // ... (keep existing element selections)
+        const sidebar = document.querySelector('.sidebar'); // Add if not already present
+        const toggleButton = document.getElementById('sidebar-toggle-button');
+        const bodyElement = document.body;
+        // ... (rest of existing element selections)
+
+        // --- Sidebar Toggle Logic ---
+        const toggleIcon = toggleButton ? toggleButton.querySelector('svg.feather') : null;
+
+        function setSidebarState(isExpanded) {
+            if (!bodyElement || !toggleIcon) {
+                console.error("Sidebar toggle elements not found.");
+                return;
+            }
+            if (isExpanded) {
+                bodyElement.classList.add('sidebar-expanded');
+                toggleIcon.setAttribute('data-feather', 'chevrons-left'); // Change icon to indicate collapse action
+                localStorage.setItem('sidebarState', 'expanded');
+            } else {
+                bodyElement.classList.remove('sidebar-expanded');
+                toggleIcon.setAttribute('data-feather', 'chevrons-right'); // Change icon to indicate expand action
+                localStorage.setItem('sidebarState', 'collapsed');
+            }
+
+            // Trigger chart resize after CSS transition completes
+            if (expenseChart && typeof expenseChart.resize === 'function') {
+                 // Delay slightly longer than the CSS transition (0.3s = 300ms)
+                 setTimeout(() => {
+                    try {
+                        expenseChart.resize();
+                    } catch(e) {
+                        console.warn("Could not resize chart:", e);
+                    }
+                 }, 350);
+             }
+        }
+
+        function initializeSidebar() {
+            if (!toggleButton) return; // Don't run if button doesn't exist
+
+            // Add click listener
+            toggleButton.addEventListener('click', () => {
+                const isCurrentlyExpanded = bodyElement.classList.contains('sidebar-expanded');
+                setSidebarState(!isCurrentlyExpanded); // Toggle the state
+            });
+
+            // Set initial state from localStorage
+            const savedState = localStorage.getItem('sidebarState');
+            // Default to collapsed unless the saved state is explicitly 'expanded'
+            setSidebarState(savedState === 'expanded');
+        }
+        // --- End Sidebar Toggle Logic ---
+
 
         // --- State ---
         let expenseChart = null;
@@ -1230,6 +1467,9 @@
         // --- Initialize ---
         document.addEventListener('DOMContentLoaded', () => {
              setChartDefaults();
+             initializeSidebar(); // <--- ADD THIS LINE HERE
+
+             // --- YOUR ORIGINAL CODE CONTINUES HERE ---
              currentMonthDisplay.textContent = "Loading...";
              totalSpendAmountEl.textContent = "---";
              categoryContent.innerHTML = "<p class='no-expenses-message'>Loading data...</p>";

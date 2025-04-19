@@ -42,7 +42,7 @@ function doGet(e) {
          return ContentService.createTextOutput("Error: Template evaluation failed. Check server logs and Dashboard.html syntax.");
     }
 
-    htmlOutput.setTitle('Ministric Dashboard - Expenses')
+    htmlOutput.setTitle('Expense Dashboard')
               .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
               .addMetaTag('viewport', 'width=device-width, initial-scale=1.0');
 
