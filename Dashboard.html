@@ -527,28 +527,42 @@
         }
 
 
-        // --- Fixed Category Mapping ---
+        // --- Fixed Category Mapping (EXPANDED EXAMPLE) ---
         const categoryMappings = {
-            // Top 9 Expense Categories + Uncategorised
+            // Core Expenses
             'Rent':               { colorVar: '--c1',  iconName: 'home' },
             'Groceries':          { colorVar: '--c2',  iconName: 'shopping-cart' },
             'Fuel':               { colorVar: '--c3',  iconName: 'truck' },
             'Restaurants':        { colorVar: '--c4',  iconName: 'coffee' },
-            'Donations':          { colorVar: '--c5',  iconName: 'gift' },
-            'Clothing & Shoes':   { colorVar: '--c6',  iconName: 'shopping-bag' },
-            'Takeaways':          { colorVar: '--c7',  iconName: 'package' },
+            'Takeaways':          { colorVar: '--c7',  iconName: 'package' }, // Moved up
+            'Utilities':          { colorVar: '--c11', iconName: 'zap' }, // Example New
+            'Internet':           { colorVar: '--c12', iconName: 'wifi' }, // Example New
             'Cellphone':          { colorVar: '--c8',  iconName: 'smartphone' },
-            'Personal Care':      { colorVar: '--c9',  iconName: 'smile' }, // Added
-            'Uncategorised':      { colorVar: '--c10', iconName: 'tag' },
 
-            // Definition for the grouped "Other Expenses" category
-            'Other Expenses':     { colorVar: '--text-tertiary', iconName: 'tag' },
+            // Financial/Giving
+            'Donations':          { colorVar: '--c5',  iconName: 'gift' },
+            'Tithing':            { colorVar: '--c13', iconName: 'percent' }, // Example New - Use % icon
+            'Insurance':          { colorVar: '--c14', iconName: 'shield' }, // Example New
 
-            // Fallback for any category somehow missed
-            '__DEFAULT__':        { colorVar: '--text-tertiary', iconName: 'tag' }
+            // Personal/Lifestyle
+            'Clothing & Shoes':   { colorVar: '--c6',  iconName: 'shopping-bag' },
+            'Personal Care':      { colorVar: '--c9',  iconName: 'smile' },
+            'Entertainment':      { colorVar: '--c15', iconName: 'film' }, // Example New
+            'Sport & Hobbies':    { colorVar: '--c16', iconName: 'activity' }, // Example New
+            'Medical/Pharmacy':   { colorVar: '--c17', iconName: 'heart' }, // Example New
+
+            // Other Common
+            'Vehicle Maintenance':{ colorVar: '--c18', iconName: 'tool' }, // Example New
+            'Public Transport':   { colorVar: '--c19', iconName: 'navigation' }, // Example New
+            'Uncategorised':      { colorVar: '--c10', iconName: 'tag' }, // Keep for uncategorized items
+
+            // --- Special Definitions ---
+            // Definition for the grouped "Other Expenses" category (shown when needed)
+            'Other Expenses':     { colorVar: '--text-tertiary', iconName: 'tag', isGroupedCategory: true }, // Added flag
+            // Fallback for any category *not* in this map but making Top N
+            '__DEFAULT__':        { colorVar: '--text-tertiary', iconName: 'alert-circle' } // Changed icon for unknown
         };
         // --- End Fixed Category Mapping ---
-
 
         // --- Icon Mapping (ORIGINAL - Ensure it includes fallbacks) ---
         const categoryIconMap = {
@@ -825,71 +839,72 @@
         } // --- End of getHistoricalDataForCategory ---
 
 
-        // --- Process Data for Display (Using Fixed Mappings) ---
-        function processCycleDataForDisplay(cycleData, mappings) {
+        // --- Process Data for Display (Dynamic Top N + Other) ---
+        function processCycleDataForDisplay(cycleData, mappings, topN = 9) {
             const displayCategories = [];
             let otherExpensesTotal = 0;
-            const otherContributingKeys = []; // Store keys that make up "Other Expenses"
-            const mappedKeys = Object.keys(mappings).filter(k => k !== '__DEFAULT__' && k !== 'Other Expenses');
+            const otherContributingCategories = {}; // Store { name: amount } for breakdown
+            const allCategoryTotals = {}; // Store { name: amount } for ALL cats this cycle
+
             const detailKeysInCycle = cycleData?.details ? Object.keys(cycleData.details) : [];
-            const processedKeys = new Set(); // Keep track of keys we've handled
 
-            // 1. Process Mapped Categories
-            mappedKeys.forEach(categoryName => {
-                if (detailKeysInCycle.includes(categoryName)) {
-                    const transactions = cycleData.details[categoryName] || [];
-                    const totalAmount = transactions.reduce((sum, item) => {
-                        const amount = Number(item.amount);
-                        return sum + (isNaN(amount) ? 0 : amount);
-                    }, 0);
+            // 1. Calculate totals for ALL categories in this cycle
+            detailKeysInCycle.forEach(categoryName => {
+                // No need to check for Transfer here, backend already removed it from details
 
-                    if (totalAmount > 0) { // Only add if there's spending
-                         const mapping = mappings[categoryName];
-                         displayCategories.push({
-                             name: categoryName,
-                             amount: totalAmount,
-                             colorVar: mapping.colorVar,
-                             iconName: mapping.iconName
-                         });
-                    }
-                    processedKeys.add(categoryName); // Mark as processed
+                const transactions = cycleData.details[categoryName] || [];
+                const totalAmount = transactions.reduce((sum, item) => {
+                    const amount = Number(item.amount);
+                    return sum + (isNaN(amount) ? 0 : amount);
+                }, 0);
+
+                if (totalAmount > 0) { // Only consider categories with spending
+                    allCategoryTotals[categoryName] = totalAmount;
                 }
             });
 
-            // 2. Process Remaining Categories into "Other Expenses"
-            detailKeysInCycle.forEach(key => {
-                if (!processedKeys.has(key)) { // If not already processed as a mapped category
-                    const transactions = cycleData.details[key] || [];
-                    const totalAmount = transactions.reduce((sum, item) => {
-                        const amount = Number(item.amount);
-                        return sum + (isNaN(amount) ? 0 : amount);
-                    }, 0);
+            // 2. Sort all categories by amount for this cycle
+            const sortedCategories = Object.entries(allCategoryTotals)
+                .map(([name, amount]) => ({ name, amount }))
+                .sort((a, b) => b.amount - a.amount);
 
-                    if (totalAmount > 0) {
-                        otherExpensesTotal += totalAmount;
-                        otherContributingKeys.push(key); // Track which categories contribute
-                    }
+            // 3. Determine Top N and calculate "Other Expenses"
+            const topNCategories = sortedCategories.slice(0, topN);
+            const topNCategoryNames = new Set(topNCategories.map(cat => cat.name)); // Set for quick lookup
+
+            sortedCategories.forEach(category => {
+                if (topNCategoryNames.has(category.name)) {
+                    // This category is in the Top N for this period
+                    const mapping = mappings[category.name] || mappings['__DEFAULT__']; // Find mapping or use default
+                    displayCategories.push({
+                        name: category.name,
+                        amount: category.amount,
+                        colorVar: mapping.colorVar,
+                        iconName: mapping.iconName
+                    });
+                } else {
+                    // This category is NOT in the Top N, add to "Other Expenses"
+                    otherExpensesTotal += category.amount;
+                    otherContributingCategories[category.name] = category.amount; // Store for breakdown view
                 }
             });
 
-            // 3. Add "Other Expenses" category if it has value
+            // 4. Add "Other Expenses" category if it has value
             if (otherExpensesTotal > 0) {
-                const otherMapping = mappings['Other Expenses'];
+                const otherMapping = mappings['Other Expenses']; // Get style for the grouped category
                 displayCategories.push({
                     name: 'Other Expenses',
                     amount: otherExpensesTotal,
                     colorVar: otherMapping.colorVar,
-                    iconName: otherMapping.iconName
+                    iconName: otherMapping.iconName,
+                    isGrouped: true // Add a flag to identify this special item
                 });
             }
 
-            // 4. Sort by amount for display order
-            displayCategories.sort((a, b) => b.amount - a.amount);
-
-            // 5. Return processed data
+            // 5. Return processed data (already sorted by Top N amount, then Other)
             return {
                  displayCategories: displayCategories, // Categories ready for chart/list
-                 otherContributingKeys: otherContributingKeys // Keys grouped into 'Other Expenses'
+                 otherContributingCategories: otherContributingCategories // Categories grouped into 'Other' {name: amount}
             };
         }
         // --- End Process Data for Display ---
@@ -1154,22 +1169,24 @@
                     </div>`;
         }
 
-        function displayCategoryList(categoriesToShow) { // Renamed parameter for clarity
-            categoryListTitle.textContent = "Top Categories";
+        function displayCategoryList(categoriesToShow) {
+            categoryListTitle.textContent = "Top Categories"; // Or adjust title dynamically if needed
             let listHTML = '';
 
-            // Directly check the array passed in
             if (!categoriesToShow || categoriesToShow.length === 0) {
                 listHTML = `<p class="no-expenses-message">No spending categories found for this period.</p>`;
             } else {
                 listHTML = `<ul class="category-list" id="category-list-ul">`;
-                categoriesToShow.forEach((category) => { // Loop through the provided array
+                categoriesToShow.forEach((category) => {
                     const categoryName = category.name;
-                    const iconName = category.iconName; // Use the iconName from the processed data
-                    const colorVarName = category.colorVar; // Use the colorVar name from the processed data
+                    // Use mapping lookup OR fallback for color/icon consistency
+                    const mapping = categoryMappings[categoryName] || categoryMappings['__DEFAULT__'];
+                    const iconName = mapping.iconName;
+                    const colorVarName = mapping.colorVar;
+                    // Add data attribute to distinguish grouped category
+                    const isGroupedAttr = category.isGrouped ? 'data-is-grouped="true"' : '';
 
-                    // Build the list item using the properties from the category object
-                    listHTML += `<li class="category-item" data-category="${categoryName}" style="--inner-color: var(${colorVarName});">
+                    listHTML += `<li class="category-item" data-category="${categoryName}" ${isGroupedAttr} style="--inner-color: var(${colorVarName});">
                                      <i data-feather="${iconName}"></i>
                                      <span class="category-name">${categoryName}</span>
                                      <span class="category-amount">${formatCurrency(category.amount)}</span>
@@ -1178,9 +1195,9 @@
                 listHTML += `</ul>`;
             }
 
-            categoryContent.innerHTML = listHTML; // Update container
+            categoryContent.innerHTML = listHTML;
             try {
-                feather.replace({ width: 18, height: 18, 'stroke-width': 2 }); // Re-render icons
+                feather.replace({ width: 18, height: 18, 'stroke-width': 2 });
             } catch (e) {
                 console.error("Feather Error:", e);
             }
@@ -1317,13 +1334,15 @@
              backButton.className = 'back-button-header';
              backButton.innerHTML = `<i data-feather="arrow-left"></i>Back`;
              backButton.addEventListener('click', () => {
-                 currentViewMode = 'monthlyOverview'; // Switch back to overview mode
+                 // Always return to the main monthly overview when back is clicked
+                 currentViewMode = 'monthlyOverview';
                  selectedCategoryForHistory = null;
-                 updateDashboardUI(monthKeys[currentMonthIndex]); // Go back to overview for current CYCLE
+                 updateDashboardUI(monthKeys[currentMonthIndex]);
              });
              headerElement.appendChild(backButton);
-             feather.replace({ width: 15, height: 15 }); // Render icon
+             feather.replace({ width: 15, height: 15 });
          }
+
         function removeBackButton(headerElement, buttonId) {
              const button = headerElement.querySelector(`#${buttonId}`);
              if (button) button.remove();
@@ -1378,12 +1397,24 @@
             });
         }
         function handleCategoryListItemClick(event) {
-             const categoryItem = event.target.closest('.category-item'); // Use delegation
-             if (categoryItem && categoryItem.dataset.category && currentViewMode === 'monthlyOverview') { // Ensure we are in overview
-                 const category = categoryItem.dataset.category;
-                 switchToCategoryDetailView(category);
+             const categoryItem = event.target.closest('.category-item');
+             if (!categoryItem) return; // Exit if click wasn't on an item
+
+             const category = categoryItem.dataset.category;
+             const isGrouped = categoryItem.dataset.isGrouped === 'true';
+
+             if (category && currentViewMode === 'monthlyOverview') {
+                 if (isGrouped && category === 'Other Expenses') {
+                     // Handle click on the grouped "Other Expenses"
+                     displayOtherExpensesBreakdown(monthKeys[currentMonthIndex]);
+                 } else if (!isGrouped) {
+                     // Handle click on a regular category (Top N or otherwise)
+                     switchToCategoryDetailView(category);
+                 }
              }
+             // If in categoryHistory view, clicks are handled by the chart or back button
         }
+
         function handleHistoryChartClick(event, elements, chart) {
               if (elements.length > 0 && chart && chart.fullKeys && selectedCategoryForHistory) {
                   const elementIndex = elements[0].index;
@@ -1506,15 +1537,16 @@ if (!rawCycleData || !rawCycleData.details || Object.keys(rawCycleData.details).
                  return;
              }
 
-             // --- Process the data using the new function ---
-             const processedData = processCycleDataForDisplay(rawCycleData, categoryMappings);
-             console.log("Processed data for display:", processedData); // <-- ADD THIS LINE
+            // --- Process the data using the new function ---
+            // Pass the raw cycle data, the mappings object, and optionally the number for Top N
+            const processedData = processCycleDataForDisplay(rawCycleData, categoryMappings, 9); // Using Top 9
+            console.log("Processed data for display:", processedData);
 
-             // Store the contributing keys for 'Other Expenses' if needed later
-             if(rawCycleData) {
-                rawCycleData.otherKeys = processedData.otherContributingKeys;
-             }
-             // --- End Data Processing ---
+            // Store the contributing categories for 'Other Expenses' on the raw data object if needed later
+            if(rawCycleData) {
+               rawCycleData.otherKeysGrouped = processedData.otherContributingCategories;
+            }
+            // --- End Data Processing ---
 
              requestAnimationFrame(() => {
                  // Pass the *processed* categories to chart and list functions
@@ -1597,6 +1629,10 @@ if (!rawCycleData || !rawCycleData.details || Object.keys(rawCycleData.details).
             // Update the history chart highlight after the DOM updates
             requestAnimationFrame(() => { highlightHistoryBarForCycle(newCycleKey); });
         }
+
+
+
+        
         // --- End Core Update Functions ---
 
 
