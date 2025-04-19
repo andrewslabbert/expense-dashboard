@@ -1205,23 +1205,28 @@
                   const startIndex = Math.max(0, currentCycleIndexInKeys - numPeriodsForAvg + 1);
                   for (let i = startIndex; i <= currentCycleIndexInKeys; i++) {
                       const key = monthKeys[i];
-                      const cycleData = dashboardData[key];
+                      const cycleDataHist = dashboardData[key]; // Use a different variable name to avoid confusion
                       let periodTotal = 0;
 
-                      // Check if cycleData and details exist for the key
-                      if (cycleData && cycleData.details) {
-                          // Calculate total for the specific category in that historical period
-                          if (cycleData.details[categoryName]) {
-                              periodTotal = cycleData.details[categoryName].reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-                          } else if (categoryName === "Other") {
-                              // Calculate "Other" total for historical period
-                              const displayedCatsHist = cycleData.categories || [];
-                              const topCatsHistNames = displayedCatsHist.map(c => c.name).filter(n => n !== "Other");
-                              const allDetailKeysHist = Object.keys(cycleData.details || {});
-                              const otherKeysHist = allDetailKeysHist.filter(k => !topCatsHistNames.includes(k));
-                              otherKeysHist.forEach(k => {
-                                  periodTotal += (cycleData.details[k] || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+                      // Check if historical cycleData and details exist for the key
+                      if (cycleDataHist && cycleDataHist.details) {
+                          if (categoryName === "Other Expenses") { // <--- CORRECTED: Check for "Other Expenses"
+                              // Calculate "Other Expenses" total for this historical period using frontend mapping
+                              const mappedKeys = Object.keys(categoryMappings).filter(k => k !== '__DEFAULT__' && k !== 'Other Expenses');
+                              const detailKeysForCycleHist = Object.keys(cycleDataHist.details);
+                              const otherKeysInCycleHist = detailKeysForCycleHist.filter(k => !mappedKeys.includes(k));
+
+                              otherKeysInCycleHist.forEach(histKey => {
+                                  periodTotal += (cycleDataHist.details[histKey] || []).reduce((sum, item) => {
+                                      const amount = Number(item.amount);
+                                      return sum + (isNaN(amount) ? 0 : amount);
+                                  }, 0);
                               });
+                          } else {
+                              // Calculate total for a specific, mapped category in that historical period
+                              if (cycleDataHist.details[categoryName]) {
+                                  periodTotal = cycleDataHist.details[categoryName].reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+                              }
                           }
                       }
                       historicalTotals.push(periodTotal);
@@ -1334,23 +1339,29 @@
             selectedCategoryForHistory = categoryName;
             let transactionsToShow = [];
 
-            // Logic for "Other" needs to use the current cycle's data
-            if (categoryName === "Other") {
-                const displayedCategories = cycleData.categories || [];
-                const topCategoryNames = displayedCategories.map(cat => cat.name).filter(name => name !== "Other");
+            // Logic to get transactions for the selected category
+            if (categoryName === "Other Expenses") { // <--- CORRECTED: Check for "Other Expenses"
+                // Get keys explicitly defined in the frontend mapping (excluding defaults/Other)
+                const mappedKeys = Object.keys(categoryMappings).filter(k => k !== '__DEFAULT__' && k !== 'Other Expenses');
                 const allDetailKeys = Object.keys(cycleData.details || {});
-                const otherContributingKeys = allDetailKeys.filter(key => !topCategoryNames.includes(key));
 
+                // Find keys in the data that ARE NOT in our frontend mapping
+                const otherContributingKeys = allDetailKeys.filter(key => !mappedKeys.includes(key));
+
+                transactionsToShow = []; // Start with an empty array
                 otherContributingKeys.forEach(key => {
                     const categoryTransactions = cycleData.details[key];
                     if (categoryTransactions && categoryTransactions.length > 0) {
+                        // Add category name to transaction data IF NEEDED for debugging/display
+                        // categoryTransactions.forEach(t => t.originalCategory = key);
                         transactionsToShow.push(...categoryTransactions);
                     }
                 });
-                // Sort combined "Other" transactions by date
+                // Sort combined "Other Expenses" transactions by date
                 transactionsToShow.sort((a, b) => new Date(b.date) - new Date(a.date));
+
             } else {
-                // Get transactions for a specific category
+                // Get transactions for a specific, mapped category
                 transactionsToShow = cycleData.details?.[categoryName] || [];
                 // Ensure already sorted (should be from backend, but belt-and-suspenders)
                 transactionsToShow.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -1556,24 +1567,30 @@ if (!rawCycleData || !rawCycleData.details || Object.keys(rawCycleData.details).
 
             // Recalculate transactions for the specific category in the new cycle
             let transactionsForNewCycle = [];
-             if (categoryName === "Other") {
-                 // Use the new cycle's data to determine "Other" transactions
-                 const cycleDataNew = dashboardData[newCycleKey];
-                 if (cycleDataNew && cycleDataNew.details) {
-                     const displayedCatsNew = cycleDataNew.categories || [];
-                     const topCatsNewNames = displayedCatsNew.map(c => c.name).filter(n => n !== "Other");
-                     const allDetailKeysNew = Object.keys(cycleDataNew.details);
-                     const otherKeysNew = allDetailKeysNew.filter(k => !topCatsNewNames.includes(k));
-                     otherKeysNew.forEach(key => {
-                         const catTransNew = cycleDataNew.details[key];
-                         if (catTransNew && catTransNew.length > 0) { transactionsForNewCycle.push(...catTransNew); }
-                     });
-                     transactionsForNewCycle.sort((a,b) => new Date(b.date) - new Date(a.date));
-                 }
-             } else {
-                 // Get transactions for the specific category from the new cycle's data
-                 transactionsForNewCycle = (data?.details?.[categoryName] || []).sort((a,b) => new Date(b.date) - new Date(a.date));
-             }
+            if (categoryName === "Other Expenses") { // <--- CORRECTED: Check for "Other Expenses"
+                const cycleDataNew = dashboardData[newCycleKey];
+                transactionsForNewCycle = []; // Start empty
+
+                if (cycleDataNew && cycleDataNew.details) {
+                    // Get keys explicitly defined in the frontend mapping (excluding defaults/Other)
+                    const mappedKeys = Object.keys(categoryMappings).filter(k => k !== '__DEFAULT__' && k !== 'Other Expenses');
+                    const allDetailKeysNew = Object.keys(cycleDataNew.details);
+
+                    // Find keys in the NEW cycle's data that ARE NOT in our frontend mapping
+                    const otherKeysNew = allDetailKeysNew.filter(key => !mappedKeys.includes(key));
+
+                    otherKeysNew.forEach(key => {
+                        const catTransNew = cycleDataNew.details[key];
+                        if (catTransNew && catTransNew.length > 0) {
+                            transactionsForNewCycle.push(...catTransNew);
+                        }
+                    });
+                    transactionsForNewCycle.sort((a,b) => new Date(b.date) - new Date(a.date));
+                }
+            } else {
+                // Get transactions for a specific, mapped category from the new cycle's data
+                transactionsForNewCycle = (data?.details?.[categoryName] || []).sort((a,b) => new Date(b.date) - new Date(a.date));
+            }
 
             displayCategoryDetails(categoryName, transactionsForNewCycle); // Update list with new cycle's transactions
 
