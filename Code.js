@@ -1,6 +1,6 @@
 /**
  * Code.gs: Combined server-side logic for the Expenses Dashboard Web App.
- * Handles configuration, data processing (using custom cycles), and serving the HTML interface.
+ * Handles config, data processing (using custom cycles), and serving the HTML interface.
  */
 
 // --- Global Settings ---
