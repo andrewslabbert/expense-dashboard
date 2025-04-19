@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark"> <!-- Default theme is dark -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Dashboard</title>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        /* --- Theme Variables (Unchanged) --- */
+        /* ... (Keep all the :root variables from the previous example) ... */
+        :root {
+            --bg-primary-dark: #1a1d24;
+            --bg-secondary-dark: #252932;
+            --bg-tertiary-dark: #313641;
+            --text-primary-dark: #e0e6f0;
+            --text-secondary-dark: #a0a8b4;
+            --text-tertiary-dark: #767f8d;
+            --accent-primary-dark: #00f5d4; /* Teal */
+            --accent-secondary-dark: #00bfa5;
+            --color-success-dark: #34d399;
+            --color-warning-dark: #f59e0b;
+            --color-error-dark: #f43f5e;
+            --border-color-dark: #3e4450;
+            --border-highlight-dark: var(--accent-primary-dark);
+            --placeholder-color-dark: #5a6372;
+            --shadow-color-dark: rgba(0, 245, 212, 0.1);
+            --button-primary-text-dark: var(--bg-primary-dark);
+            --expense-list-hover-bg-dark: #2c313c;
+            --sidebar-bg-dark: var(--bg-primary-dark); /* Sidebar background */
+            --sidebar-link-hover-bg-dark: var(--bg-tertiary-dark);
+            --sidebar-link-active-bg-dark: var(--bg-secondary-dark);
+            --sidebar-width: 240px;
+        }
+
+        :root[data-theme="light"] {
+            --bg-primary-light: #f8f9fa;
+            --bg-secondary-light: #ffffff;
+            --bg-tertiary-light: #e9ecef;
+            --text-primary-light: #212529;
+            --text-secondary-light: #495057;
+            --text-tertiary-light: #6c757d;
+            --accent-primary-light: #00a991;
+            --accent-secondary-light: #007d6a;
+            --color-success-light: #198754;
+            --color-warning-light: #ffc107;
+            --color-error-light: #dc3545;
+            --border-color-light: #dee2e6;
+            --border-highlight-light: var(--accent-primary-light);
+            --placeholder-color-light: #adb5bd;
+            --shadow-color-light: rgba(0, 169, 145, 0.2);
+            --button-primary-text-light: #ffffff;
+            --expense-list-hover-bg-light: #f1f3f5;
+            --sidebar-bg-light: var(--bg-secondary-light); /* Sidebar background */
+            --sidebar-link-hover-bg-light: var(--bg-tertiary-light);
+            --sidebar-link-active-bg-light: #e0e7ef; /* Slightly different active */
+        }
+
+        :root {
+            --bg-primary: var(--bg-primary-dark);
+            --bg-secondary: var(--bg-secondary-dark);
+            --bg-tertiary: var(--bg-tertiary-dark);
+            --text-primary: var(--text-primary-dark);
+            --text-secondary: var(--text-secondary-dark);
+            --text-tertiary: var(--text-tertiary-dark);
+            --accent-primary: var(--accent-primary-dark);
+            --accent-secondary: var(--accent-secondary-dark);
+            --color-success: var(--color-success-dark);
+            --color-warning: var(--color-warning-dark);
+            --color-error: var(--color-error-dark);
+            --border-color: var(--border-color-dark);
+            --border-highlight: var(--border-highlight-dark);
+            --placeholder-color: var(--placeholder-color-dark);
+            --shadow-color: var(--shadow-color-dark);
+            --button-primary-text: var(--button-primary-text-dark);
+            --expense-list-hover-bg: var(--expense-list-hover-bg-dark);
+            --sidebar-bg: var(--sidebar-bg-dark);
+            --sidebar-link-hover-bg: var(--sidebar-link-hover-bg-dark);
+            --sidebar-link-active-bg: var(--sidebar-link-active-bg-dark);
+
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --fast-transition-speed: 0.15s;
+            --default-budget: 2000;
+        }
+
+         :root[data-theme="light"] {
+            --bg-primary: var(--bg-primary-light);
+            --bg-secondary: var(--bg-secondary-light);
+            --bg-tertiary: var(--bg-tertiary-light);
+            --text-primary: var(--text-primary-light);
+            --text-secondary: var(--text-secondary-light);
+            --text-tertiary: var(--text-tertiary-light);
+            --accent-primary: var(--accent-primary-light);
+            --accent-secondary: var(--accent-secondary-light);
+            --color-success: var(--color-success-light);
+            --color-warning: var(--color-warning-light);
+            --color-error: var(--color-error-light);
+            --border-color: var(--border-color-light);
+            --border-highlight: var(--border-highlight-light);
+            --placeholder-color: var(--placeholder-color-light);
+            --shadow-color: var(--shadow-color-light);
+            --button-primary-text: var(--button-primary-text-light);
+            --expense-list-hover-bg: var(--expense-list-hover-bg-light);
+            --sidebar-bg: var(--sidebar-bg-light);
+            --sidebar-link-hover-bg: var(--sidebar-link-hover-bg-light);
+            --sidebar-link-active-bg: var(--sidebar-link-active-bg-light);
+        }
+
+        /* --- Base & Reset (Unchanged) --- */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { font-size: 16px; scroll-behavior: smooth; color-scheme: dark light; transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease; }
+        body { font-family: var(--font-family); background-color: var(--bg-primary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease; } /* Removed flex align/justify */
+
+        /* --- NEW: App Layout --- */
+        #app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- NEW: Sidebar --- */
+        #sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0; /* Prevent sidebar from shrinking */
+            position: sticky; /* Make sidebar sticky */
+            top: 0;
+            height: 100vh; /* Full viewport height */
+            transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease;
+        }
+
+        .sidebar-header {
+             display: flex;
+             align-items: center;
+             gap: 0.75rem;
+             padding-bottom: 1.5rem;
+             margin-bottom: 1.5rem;
+             border-bottom: 1px solid var(--border-color);
+         }
+
+        .sidebar-header .logo-icon {
+             width: 32px;
+             height: 32px;
+             color: var(--accent-primary);
+        }
+
+         .sidebar-header h2 {
+             font-size: 1.25rem;
+             font-weight: 600;
+             color: var(--text-primary);
+             margin: 0;
+         }
+
+        #sidebar-nav {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1; /* Allow nav to grow, push footer down */
+        }
+
+        #sidebar-nav li {
+            margin-bottom: 0.5rem;
+        }
+
+        #sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.75rem 1rem;
+            border-radius: var(--border-radius);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: background-color var(--fast-transition-speed) ease, color var(--fast-transition-speed) ease;
+        }
+
+        #sidebar-nav a:hover {
+            background-color: var(--sidebar-link-hover-bg);
+            color: var(--text-primary);
+        }
+
+        #sidebar-nav a.active {
+            background-color: var(--sidebar-link-active-bg);
+            color: var(--accent-primary); /* Highlight active link with accent */
+            font-weight: 600;
+        }
+        #sidebar-nav a.active .icon {
+            stroke: var(--accent-primary); /* Match icon color */
+        }
+
+
+        #sidebar-nav .icon {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+             transition: stroke var(--fast-transition-speed) ease;
+        }
+
+        /* --- NEW: Main Content Area --- */
+        #main-content {
+            flex-grow: 1; /* Take remaining space */
+            padding: 2rem; /* Add padding around content */
+            overflow-y: auto; /* Allow content area to scroll if needed */
+            background-color: var(--bg-primary); /* Match body bg */
+             transition: background-color var(--transition-speed) ease;
+        }
+
+        /* --- Dashboard Container (Now inside Main Content) --- */
+        .dashboard-container {
+            width: 100%;
+            max-width: 1200px; /* Optional: Still constrain content width */
+            margin: 0 auto; /* Center if max-width is applied */
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* --- Existing Styles (Largely Unchanged, but verify selectors if needed) --- */
+        /* Header, Metrics, Main Content Grid, Expenses Log, Add Expense Form, Buttons, Lists etc. */
+        /* ... (Keep styles for header, .metrics, .metric-card, .main-content grid, etc.) ... */
+        /* ... (Make sure selectors don't conflict or assume old structure) ... */
+
+        header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem; margin-bottom: 0rem; }
+        header .title-area h1 { font-size: 2rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem; }
+        header .title-area p { color: var(--text-secondary); font-size: 1rem; }
+        .header-controls { display: flex; align-items: center; gap: 1rem; }
+
+        /* Theme Switcher Styles (Unchanged) */
+        .theme-switch-wrapper { display: flex; align-items: center; gap: 0.5rem; }
+        .theme-switch { display: inline-block; height: 22px; position: relative; width: 44px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: var(--bg-tertiary); bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: var(--transition-speed); border-radius: 22px; border: 1px solid var(--border-color); }
+        .slider:before { background-color: var(--text-secondary); bottom: 2px; content: ""; height: 16px; left: 3px; position: absolute; transition: var(--transition-speed); width: 16px; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-secondary); }
+        input:checked + .slider:before { transform: translateX(22px); background-color: var(--bg-secondary); }
+        .theme-switch-wrapper .icon { stroke: var(--text-tertiary); width: 18px; height: 18px; }
+
+        /* Metrics Section */
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+        .metric-card { background-color: var(--bg-secondary); padding: 1.5rem; border-radius: var(--border-radius); border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.5rem; transition: background-color var(--transition-speed) ease, border-color var(--fast-transition-speed) ease; overflow: hidden; }
+        .metric-card:hover { background-color: var(--bg-tertiary); }
+        .metric-updated { border-color: var(--border-highlight) !important; }
+        .metric-low-budget { border-color: var(--color-warning) !important; }
+        .metric-over-budget { border-color: var(--color-error) !important; }
+        .metric-header { display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .metric-header .icon { width: 18px; height: 18px; stroke: var(--text-tertiary); }
+        .metric-value { font-size: 2.25rem; font-weight: 600; color: var(--text-primary); line-height: 1.2; transition: transform var(--fast-transition-speed) ease-out, color var(--fast-transition-speed) ease-out; }
+        .metric-value.placeholder { color: var(--placeholder-color); font-size: 2rem; }
+        .metric-value-pop { transform: scale(1.1); color: var(--accent-primary); animation: popBack var(--transition-speed) ease-out forwards var(--fast-transition-speed); }
+        @keyframes popBack { to { transform: scale(1.0); color: var(--text-primary); } }
+        .metric-subtext { font-size: 0.85rem; color: var(--text-tertiary); }
+        .metric-value.positive { color: var(--color-success); }
+        .metric-value.warning { color: var(--color-warning); }
+        .metric-value.negative { color: var(--color-error); }
+
+        /* Main Content Area Grid (within #main-content > .dashboard-container) */
+        .main-content-grid { display: grid; grid-template-columns: 3fr 1fr; gap: 1.5rem; }
+        .expenses-log-column, .add-expense-section { background-color: var(--bg-secondary); border-radius: var(--border-radius); padding: 1.5rem; border: 1px solid var(--border-color); display: flex; flex-direction: column; }
+
+        /* Add Expense Form Styles (Unchanged) */
+         .add-expense-section h2 { font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+        .add-expense-section h2 .icon { width: 18px; height: 18px; stroke: var(--text-secondary); }
+        .add-expense-form .form-group { margin-bottom: 1rem; }
+        .add-expense-form label { display: block; margin-bottom: 0.4rem; font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); }
+        .add-expense-form input[type="text"], .add-expense-form input[type="number"], .add-expense-form input[type="date"], .add-expense-form select { width: 100%; padding: 0.7rem 0.8rem; font-size: 1rem; border-radius: var(--border-radius); border: 1px solid var(--border-color); background-color: var(--bg-primary); color: var(--text-primary); transition: border-color var(--fast-transition-speed) ease, box-shadow var(--fast-transition-speed) ease; }
+        .add-expense-form input:focus, .add-expense-form select:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 2px var(--shadow-color); }
+        .add-expense-form input::placeholder { color: var(--placeholder-color); }
+        .add-expense-form input[type="number"]::-webkit-inner-spin-button, .add-expense-form input[type="number"]::-webkit-outer-spin-button { appearance: none; margin: 0; }
+        .add-expense-form input[type="number"] { appearance: textfield; }
+        .add-expense-form .form-actions { margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: flex-end; }
+
+        /* Buttons (Unchanged) */
+        .primary-button, .secondary-button { border: none; padding: 0.7rem 1.5rem; font-size: 1rem; font-weight: 600; border-radius: var(--border-radius); cursor: pointer; display: inline-flex; align-items: center; gap: 0.6rem; transition: all var(--transition-speed) ease; white-space: nowrap; }
+        .primary-button { background: linear-gradient(45deg, var(--accent-secondary), var(--accent-primary)); color: var(--button-primary-text); box-shadow: 0 4px 15px var(--shadow-color); }
+        .primary-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px var(--shadow-color); filter: brightness(1.1); }
+        .primary-button:active:not(:disabled) { transform: translateY(0); box-shadow: 0 2px 10px var(--shadow-color); }
+        .primary-button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .secondary-button { background-color: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); padding: 0.6rem 1.2rem; font-size: 0.9rem; }
+        .secondary-button:hover { background-color: var(--bg-tertiary); border-color: var(--text-tertiary); color: var(--text-primary); }
+        .secondary-button:active { background-color: var(--bg-tertiary); transform: translateY(1px); }
+        .primary-button .icon, .secondary-button .icon { width: 18px; height: 18px; }
+        .secondary-button .icon { width: 16px; height: 16px; }
+
+
+        /* Expenses List Styles (Unchanged) */
+        .expenses-log-column h2 { font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+        .expenses-log-column h2 .icon { width: 18px; height: 18px; stroke: var(--text-secondary); }
+        .expense-list { list-style: none; flex-grow: 1; overflow-y: auto; padding-right: 0.5rem; max-height: 450px; /* Limit height */ }
+        .expense-list::-webkit-scrollbar { width: 6px; }
+        .expense-list::-webkit-scrollbar-track { background: var(--bg-tertiary); border-radius: 3px; }
+        .expense-list::-webkit-scrollbar-thumb { background-color: var(--text-tertiary); border-radius: 3px; }
+        .expense-list::-webkit-scrollbar-thumb:hover { background-color: var(--text-secondary); }
+        .expense-list li { padding: 0.85rem 0.5rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 1rem; font-size: 0.95rem; color: var(--text-primary); transition: background-color var(--fast-transition-speed) ease; }
+        .expense-list li:last-child { border-bottom: none; }
+        .expense-list li:hover { background-color: var(--expense-list-hover-bg); }
+        .expense-list .expense-icon { width: 20px; height: 20px; flex-shrink: 0; stroke-width: 2; color: var(--text-tertiary); }
+        .expense-list .expense-details { flex-grow: 1; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .expense-list .description { font-weight: 500; color: var(--text-primary); }
+        .expense-list .category { font-size: 0.85em; color: var(--text-secondary); background-color: var(--bg-tertiary); padding: 0.15rem 0.5rem; border-radius: 4px; white-space: nowrap; }
+        .expense-list .amount { font-weight: 600; color: var(--color-error); white-space: nowrap; margin-left: auto; padding-left: 1rem; }
+        .expense-list .date { font-size: 0.85em; color: var(--text-tertiary); white-space: nowrap; flex-basis: 100px; text-align: right; }
+        .expense-list .empty-state { color: var(--text-secondary); text-align: center; padding: 2rem; font-style: italic;}
+        .category-food { color: var(--color-warning); }
+        .category-transport { color: var(--color-success); }
+        .category-utilities { color: var(--accent-primary); }
+        .category-entertainment { color: var(--color-error); }
+        .category-other { color: var(--text-tertiary); }
+
+
+        /* --- Responsiveness --- */
+        /* Hide sidebar and adjust main content padding on smaller screens */
+        @media (max-width: 992px) {
+            #sidebar {
+                display: none; /* Hide sidebar */
+            }
+            #main-content {
+                padding: 1.5rem; /* Adjust padding when sidebar is hidden */
+            }
+            /* Adjust the main content grid inside dashboard if needed */
+             .main-content-grid { grid-template-columns: 1fr; }
+             .add-expense-section { order: 1; } /* Form first on smaller screens */
+             .expenses-log-column { order: 2; }
+             .expense-list { max-height: 350px; }
+        }
+
+        @media (max-width: 768px) {
+             #main-content { padding: 1rem 0.5rem; } /* Further reduce padding */
+             header { flex-direction: column; align-items: flex-start; padding-bottom: 1rem;}
+             .metrics { grid-template-columns: 1fr 1fr; gap: 1rem; }
+             .metric-card { padding: 1rem; }
+             .metric-value { font-size: 1.75rem; }
+             .expense-list li { font-size: 0.9rem; gap: 0.75rem; }
+             .expense-list .expense-details { flex-direction: column; align-items: flex-start; gap: 0.2rem; }
+             .expense-list .amount { margin-left: 0; padding-left: 0; }
+             .expense-list .date { text-align: left; }
+        }
+        @media (max-width: 576px) {
+            html { font-size: 15px; }
+            header .title-area h1 { font-size: 1.5rem; }
+            .header-controls { width: 100%; justify-content: flex-end; }
+            .metrics { grid-template-columns: 1fr; }
+            .metric-value { font-size: 2rem; }
+            .main-content-grid { gap: 1rem; }
+            .expenses-log-column, .add-expense-section { padding: 1rem; }
+            .expenses-log-column h2, .add-expense-section h2 { font-size: 1.1rem; padding-bottom: 0.5rem; margin-bottom: 0.75rem; }
+            .add-expense-form .form-actions { justify-content: space-between; }
+            .add-expense-form .primary-button, .add-expense-form .secondary-button { flex-grow: 1; justify-content: center; }
+             .expense-list { max-height: 300px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="app-layout">
+
+        <aside id="sidebar">
+             <div class="sidebar-header">
+                 <i data-feather="dollar-sign" class="logo-icon"></i>
+                 <h2>My Finances</h2>
+             </div>
+            <nav>
+                <ul id="sidebar-nav">
+                    <li>
+                        <a href="#" class="active"> <!-- Add 'active' class to current page -->
+                            <i data-feather="home" class="icon"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#"> <!-- This link is inactive for now -->
+                            <i data-feather="list" class="icon"></i>
+                            <span>Transactions</span>
+                        </a>
+                    </li>
+                     <!-- Add more menu items here later -->
+                     <!-- Example:
+                     <li>
+                        <a href="#">
+                            <i data-feather="pie-chart" class="icon"></i>
+                            <span>Reports</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i data-feather="settings" class="icon"></i>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                    -->
+                </ul>
+            </nav>
+             <!-- Optional: Sidebar Footer -->
+             <!--
+             <div class="sidebar-footer" style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                 <span style="font-size: 0.8rem; color: var(--text-tertiary);">© 2023 Expense Tracker</span>
+             </div>
+             -->
+        </aside>
+
+        <main id="main-content">
+            <div class="dashboard-container"> <!-- Existing content goes inside here -->
+                <header>
+                    <div class="title-area">
+                        <h1>Expense Dashboard</h1>
+                        <p>Track your spending effectively</p>
+                    </div>
+                     <div class="header-controls">
+                         <div class="theme-switch-wrapper">
+                             <i data-feather="sun" class="icon"></i>
+                             <label class="theme-switch" for="theme-checkbox">
+                                 <input type="checkbox" id="theme-checkbox" />
+                                 <div class="slider"></div>
+                             </label>
+                             <i data-feather="moon" class="icon"></i>
+                         </div>
+                     </div>
+                </header>
+
+                <section class="metrics" id="metrics-section">
+                     <!-- Metric Cards (Unchanged HTML) -->
+                     <div class="metric-card">
+                        <div class="metric-header"> <span>Total Spent (This Month)</span> <i data-feather="trending-down" class="icon"></i> </div>
+                        <div class="metric-value" id="metric-total-spent">$0.00</div>
+                        <div class="metric-subtext">Based on current entries</div>
+                    </div>
+                    <div class="metric-card" id="budget-metric-card">
+                        <div class="metric-header"> <span>Budget Remaining</span> <i data-feather="target" class="icon"></i> </div>
+                        <div class="metric-value positive" id="metric-budget-remaining">$0.00</div>
+                        <div class="metric-subtext">Target: $<span id="budget-target">2000</span></div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-header"> <span>Avg. Transaction</span> <i data-feather="divide-circle" class="icon"></i> </div>
+                        <div class="metric-value" id="metric-avg-transaction">$0.00</div>
+                        <div class="metric-subtext">Average spend per item</div>
+                    </div>
+                     <div class="metric-card">
+                        <div class="metric-header"> <span>Transaction Count</span> <i data-feather="hash" class="icon"></i> </div>
+                        <div class="metric-value" id="metric-transaction-count">0</div>
+                        <div class="metric-subtext">Total number of entries</div>
+                    </div>
+                </section>
+
+                <section class="main-content-grid"> <!-- Renamed class slightly to avoid conflict -->
+                     <div class="expenses-log-column">
+                         <h2><i data-feather="list" class="icon"></i>Recent Expenses</h2>
+                        <ul class="expense-list" id="expense-list">
+                            <li class="empty-state">No expenses added yet.</li>
+                        </ul>
+                    </div>
+
+                    <div class="add-expense-section">
+                        <h2><i data-feather="plus-circle" class="icon"></i>Add New Expense</h2>
+                        <form id="add-expense-form" class="add-expense-form">
+                            <!-- Form Elements (Unchanged HTML) -->
+                             <div class="form-group">
+                                <label for="expense-description">Description</label>
+                                <input type="text" id="expense-description" placeholder="e.g., Coffee, Train ticket" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="expense-amount">Amount ($)</label>
+                                <input type="number" id="expense-amount" placeholder="e.g., 4.50" step="0.01" min="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="expense-category">Category</label>
+                                <select id="expense-category" required>
+                                    <option value="" disabled selected>Select a category</option>
+                                    <option value="Food">Food & Groceries</option>
+                                    <option value="Transport">Transport</option>
+                                    <option value="Utilities">Utilities</option>
+                                    <option value="Entertainment">Entertainment</option>
+                                    <option value="Health">Health</option>
+                                    <option value="Shopping">Shopping</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                             <div class="form-group">
+                                <label for="expense-date">Date</label>
+                                <input type="date" id="expense-date" required>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="secondary-button" id="clear-form-button">Clear</button>
+                                <button type="submit" class="primary-button"> <i data-feather="plus" class="icon"></i> Add Expense </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+            </div> <!-- End .dashboard-container -->
+        </main> <!-- End #main-content -->
+
+    </div> <!-- End #app-layout -->
+
+
+    <script>
+        // --- Feather Icons Init ---
+        // Moved later to ensure all elements exist
+
+        // --- DOM Elements (Keep all from previous example) ---
+        const themeCheckbox = document.getElementById('theme-checkbox');
+        const htmlElement = document.documentElement;
+        const expenseList = document.getElementById('expense-list');
+        const addExpenseForm = document.getElementById('add-expense-form');
+        const descriptionInput = document.getElementById('expense-description');
+        const amountInput = document.getElementById('expense-amount');
+        const categoryInput = document.getElementById('expense-category');
+        const dateInput = document.getElementById('expense-date');
+        const clearFormButton = document.getElementById('clear-form-button');
+        const metricTotalSpent = document.getElementById('metric-total-spent');
+        const metricBudgetRemaining = document.getElementById('metric-budget-remaining');
+        const metricAvgTransaction = document.getElementById('metric-avg-transaction');
+        const metricTransactionCount = document.getElementById('metric-transaction-count');
+        const budgetTargetSpan = document.getElementById('budget-target');
+        const budgetMetricCard = document.getElementById('budget-metric-card');
+
+        // --- State & Config (Unchanged) ---
+        let expenses = [];
+        const budget = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--default-budget')) || 2000;
+        budgetTargetSpan.textContent = budget.toFixed(2);
+
+        // --- Demo Data (Unchanged) ---
+        const demoExpenses = [
+            { id: 1, description: "Lunch with colleagues", amount: 25.50, category: "Food", date: "2023-10-26" },
+            { id: 2, description: "Monthly Train Pass", amount: 85.00, category: "Transport", date: "2023-10-25" },
+            { id: 3, description: "Electricity Bill", amount: 62.75, category: "Utilities", date: "2023-10-24" },
+            { id: 4, description: "Movie Tickets", amount: 30.00, category: "Entertainment", date: "2023-10-22" },
+            { id: 5, description: "Groceries", amount: 115.20, category: "Food", date: "2023-10-21" },
+        ];
+
+        // --- Helper Functions (Unchanged) ---
+        function formatCurrency(value) { /* ... */ return `$${value.toFixed(2)}`; }
+        function formatDate(dateString) { /* ... */ const date = new Date(dateString + 'T00:00:00'); return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+        function getCategoryIcon(category) { /* ... */ switch (category.toLowerCase()) { case 'food': return 'shopping-cart'; case 'transport': return 'truck'; case 'utilities': return 'zap'; case 'entertainment': return 'film'; case 'health': return 'heart'; case 'shopping': return 'shopping-bag'; default: return 'tag'; } }
+        function getCategoryClass(category) { /* ... */ switch (category.toLowerCase()) { case 'food': return 'category-food'; case 'transport': return 'category-transport'; case 'utilities': return 'category-utilities'; case 'entertainment': return 'category-entertainment'; default: return 'category-other'; } }
+        function updateMetric(element, value, formatFn = (val) => val) { /* ... (same as before) ... */ const card = element.closest('.metric-card'); const formattedValue = formatFn(value); if (element.textContent !== formattedValue || element.classList.contains('placeholder')) { element.textContent = formattedValue; element.classList.remove('placeholder'); element.classList.add('metric-value-pop'); element.addEventListener('animationend', () => { element.classList.remove('metric-value-pop'); }, { once: true }); if (card) { card.classList.add('metric-updated'); setTimeout(() => card.classList.remove('metric-updated'), 1500); } } }
+
+
+        // --- Core Functions (Unchanged, but ensure feather.replace() is called within renderExpenses) ---
+        function renderExpenses() {
+            expenseList.innerHTML = ''; // Clear existing list
+            if (expenses.length === 0) {
+                 expenseList.innerHTML = '<li class="empty-state">No expenses added yet.</li>';
+                 feather.replace(); // Still call feather for empty state icon if any
+                 updateMetrics();
+                 return;
+            }
+            const sortedExpenses = [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+            sortedExpenses.forEach(expense => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <i data-feather="${getCategoryIcon(expense.category)}" class="expense-icon ${getCategoryClass(expense.category)}"></i>
+                    <div class="expense-details">
+                         <div>
+                            <span class="description">${expense.description}</span>
+                            <span class="category">${expense.category}</span>
+                        </div>
+                        <div>
+                             <span class="amount">${formatCurrency(expense.amount)}</span>
+                             <span class="date">${formatDate(expense.date)}</span>
+                         </div>
+                    </div>
+                `;
+                expenseList.appendChild(li);
+            });
+            feather.replace(); // Re-render icons IN THE LIST
+            updateMetrics();
+        }
+
+        function updateMetrics() { /* ... (same as before) ... */ const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0); const budgetRemaining = budget - totalSpent; const avgTransaction = expenses.length > 0 ? totalSpent / expenses.length : 0; const transactionCount = expenses.length; updateMetric(metricTotalSpent, totalSpent, formatCurrency); updateMetric(metricBudgetRemaining, budgetRemaining, formatCurrency); updateMetric(metricAvgTransaction, avgTransaction, formatCurrency); updateMetric(metricTransactionCount, transactionCount); metricBudgetRemaining.classList.remove('positive', 'warning', 'negative'); budgetMetricCard.classList.remove('metric-low-budget', 'metric-over-budget'); if (budgetRemaining < 0) { metricBudgetRemaining.classList.add('negative'); budgetMetricCard.classList.add('metric-over-budget'); } else if (budgetRemaining < budget * 0.1) { metricBudgetRemaining.classList.add('warning'); budgetMetricCard.classList.add('metric-low-budget'); } else { metricBudgetRemaining.classList.add('positive'); } }
+
+        function addExpense(event) {
+             event.preventDefault();
+             const description = descriptionInput.value.trim(); const amount = parseFloat(amountInput.value); const category = categoryInput.value; const date = dateInput.value;
+             if (!description || isNaN(amount) || amount <= 0 || !category || !date) { alert('Please fill in all fields correctly.'); return; }
+             const newExpense = { id: Date.now(), description: description, amount: amount, category: category, date: date };
+             expenses.push(newExpense);
+             renderExpenses();
+             addExpenseForm.reset();
+             setDefaultDate();
+             descriptionInput.focus();
+        }
+
+        function setDefaultDate() { /* ... (same as before) ... */ const today = new Date(); const year = today.getFullYear(); const month = String(today.getMonth() + 1).padStart(2, '0'); const day = String(today.getDate()).padStart(2, '0'); dateInput.value = `${year}-${month}-${day}`; }
+
+        function clearForm() { /* ... (same as before) ... */ addExpenseForm.reset(); setDefaultDate(); }
+
+        // --- Theme Switcher Logic (Unchanged) ---
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme) {
+            htmlElement.setAttribute('data-theme', currentTheme);
+            if (currentTheme === 'light') { themeCheckbox.checked = true; }
+        } else { htmlElement.setAttribute('data-theme', 'dark'); }
+        themeCheckbox.addEventListener('change', function() {
+             if (this.checked) { htmlElement.setAttribute('data-theme', 'light'); localStorage.setItem('theme', 'light'); }
+             else { htmlElement.setAttribute('data-theme', 'dark'); localStorage.setItem('theme', 'dark'); }
+             feather.replace(); // Re-render icons globally on theme change
+        });
+
+        // --- Event Listeners (Unchanged) ---
+        addExpenseForm.addEventListener('submit', addExpense);
+        clearFormButton.addEventListener('click', clearForm);
+
+
+        // --- Initial Load ---
+        function initializeDashboard() {
+            expenses = [...demoExpenses];
+            setDefaultDate();
+            renderExpenses(); // This now also calls updateMetrics internally
+            feather.replace(); // Initial call for all icons (sidebar, header, etc.)
+        }
+
+        initializeDashboard();
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Added DataLabels Plugin CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <style>
+        /* --- Configuration (Focused Nocturne Style) --- */
+        :root {
+            --bg-base: #16191d; --bg-surface: #1e2228; --bg-card: #252A30; --text-primary: #e8e8e8; --text-secondary: #a8b2c0; --text-tertiary: #6f7b8e; --accent: #00BFA6; --border-color: #30363e; --grid-line-color: rgba(76, 86, 100, 0.5); --shadow-color: transparent;
+            --c1: #5B8FF9; --c2: #61DDAA; --c3: #F6BD16; --c4: #65789B; --c5: #E8684A; --c6: #9270CA; --c7: #FF9D4D; --c8: #269A99; --c9: #FF99C3; --c10: #A8B2C0;
+            --font-family: 'Inter', sans-serif; --sidebar-width: 240px; --header-height: 65px; --content-padding: 35px; --card-padding: 25px; --card-radius: 8px; --history-bar-opacity: 0.45;
+        }
+
+        /* --- Base, Layout, Sidebar --- */
+         * { box-sizing: border-box; margin: 0; padding: 0; } html, body { height: 100%; overflow: hidden; } body { font-family: var(--font-family); background-color: var(--bg-base); color: var(--text-primary); line-height: 1.6; font-size: 14px; display: flex; } button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; } ul { list-style: none; } a { color: inherit; text-decoration: none; } svg.feather { width: 18px; height: 18px; stroke-width: 2; vertical-align: middle; margin-right: 10px; color: var(--text-secondary); }
+         .sidebar { width: var(--sidebar-width); background-color: var(--bg-surface); padding: 30px 20px; flex-shrink: 0; display: flex; flex-direction: column; height: 100vh; border-right: 1px solid var(--border-color); } .main-area { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; } .main-content-wrapper { flex-grow: 1; overflow-y: auto; padding: var(--content-padding); display: flex; flex-direction: column; gap: var(--content-padding); }
+         .sidebar-brand { font-size: 1.3rem; font-weight: 700; margin-bottom: 35px; padding: 0 5px; color: var(--text-primary); } .sidebar-nav ul { display: flex; flex-direction: column; gap: 8px; } .sidebar-nav a { display: flex; align-items: center; padding: 12px 15px; border-radius: 6px; font-weight: 500; font-size: 0.95rem; color: var(--text-secondary); transition: background-color 0.2s ease, color 0.2s ease, border-left 0.2s ease; position: relative; border-left: 3px solid transparent; } .sidebar-nav a:hover { background-color: var(--bg-card); color: var(--text-primary); } .sidebar-nav a.active { background-color: rgba(0, 191, 166, 0.1); color: var(--accent); font-weight: 600; border-left: 3px solid var(--accent); } .sidebar-nav a.active svg { color: var(--accent); }
+         .coming-soon-badge { font-size: 0.6rem; font-weight: 500; background-color: var(--text-tertiary); color: var(--bg-surface); padding: 1px 5px; border-radius: 3px; margin-left: auto; line-height: 1.1; text-transform: uppercase; letter-spacing: 0.4px; } .sidebar-nav a:hover .coming-soon-badge { background-color: var(--text-secondary); color: var(--bg-base); }
+
+        /* --- Controls, Core Layout --- */
+         .main-content-header-controls { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; } .month-navigator { display: flex; align-items: center; gap: 12px; } .month-navigator button { font-size: 1.3rem; color: var(--text-secondary); transition: all 0.2s ease; line-height: 1; padding: 6px; border-radius: 6px; } .month-navigator button:hover:not(:disabled) { color: var(--text-primary); background-color: var(--bg-card); } .month-navigator button:disabled { color: var(--text-tertiary); cursor: not-allowed; background-color: transparent; } .current-month { font-size: 1.3rem; font-weight: 600; color: var(--text-primary); min-width: 150px; text-align: center; } .total-spend { text-align: right; } .total-spend-label { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.6px;} .total-spend-amount { font-size: 1.7rem; font-weight: 700; color: var(--accent); line-height: 1.2; }
+         .dashboard-core { display: grid; grid-template-columns: 3fr 2fr; gap: var(--content-padding); flex-grow: 1; min-height: 0; } .graph-container, .category-list-container { background-color: var(--bg-card); border-radius: var(--card-radius); padding: var(--card-padding); display: flex; flex-direction: column; box-shadow: none; border: 1px solid var(--border-color); overflow: hidden; }
+
+        /* --- Container Header & Back Button --- */
+        .container-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; } .container-title { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0; padding-bottom: 0; border-bottom: none; flex-grow: 1; margin-right: 10px;} .back-button-header { display: inline-flex; align-items: center; gap: 7px; background-color: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 7px 14px; cursor: pointer; transition: all 0.2s ease; font-size: 0.85rem; font-weight: 500; line-height: 1; flex-shrink: 0;} .back-button-header svg { width: 15px; height: 15px; margin-right: 0px; } .back-button-header:hover { border-color: var(--accent); color: var(--accent); background-color: rgba(0, 191, 166, 0.1); }
+
+        /* --- Chart, Category List --- */
+        .chart-wrapper {
+            flex-grow: 1;
+            position: relative;
+            min-height: 300px; /* Ensure chart has space */
+        }
+        #expense-chart {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #category-content { /* Container for category list OR details view */
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            min-height: 0; /* Important for nested flex scrolling */
+            overflow: hidden;
+        }
+        .category-list { /* The scrollable list in the main overview */
+            flex-grow: 1;
+            overflow-y: auto;
+            /* Adjust margin/padding to visually align with container padding if needed */
+            margin: 0 -5px 0 -5px;
+            padding: 0 5px 0 5px;
+        }
+
+        /* --- Category Item (using Icon) --- */
+        .category-item {
+            display: flex;
+            align-items: center; /* Align icon and text vertically */
+            padding: 12px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            position: relative; /* Needed for --inner-color variable */
+        }
+        .category-list .category-item + .category-item {
+             margin-top: 2px; /* Space between items */
+        }
+        .category-item:hover {
+             background-color: rgba(232, 232, 232, 0.05); /* Subtle hover effect */
+        }
+
+        /* --- Styling for Feather Icons in category list --- */
+        .category-item i[data-feather] {
+            color: var(--inner-color); /* Use the color variable from the parent li */
+            margin-right: 14px;     /* Spacing between icon and name */
+            flex-shrink: 0;         /* Prevent icon from shrinking */
+            /* Size and stroke are set via feather.replace() in JS for consistency */
+            vertical-align: middle; /* Adjust vertical alignment if needed */
+        }
+
+        .category-name {
+            font-weight: 500;
+            color: var(--text-primary);
+            flex-grow: 1;           /* Take available space */
+            margin-right: 15px;     /* Space before amount */
+            font-size: 0.9rem;
+             /* Add ellipsis if needed for long names */
+             overflow: hidden;
+             white-space: nowrap;
+             text-overflow: ellipsis;
+        }
+        .category-amount {
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;    /* Prevent amount wrapping */
+            font-size: 0.9rem;
+            flex-shrink: 0; /* Prevent amount from shrinking */
+        }
+
+        /* --- Category Details Layout (Scrolling Fix) --- */
+        .category-details {
+            display: flex;           /* Make it a flex container */
+            flex-direction: column;  /* Stack children (scroll wrapper, total row) vertically */
+            flex-grow: 1;            /* Allow it to fill the space given by #category-content */
+            min-height: 0;           /* CRUCIAL for allowing flex children to shrink and scroll */
+            overflow: hidden;        /* Hide any potential overflow from this container itself */
+        }
+        .transactions-scroll-wrapper {
+            flex-grow: 1;            /* Allow the list to take up available vertical space */
+            overflow-y: auto;        /* Enable vertical scrolling ONLY when needed */
+             /* Add minor padding to keep scrollbar from overlapping content */
+             padding-right: 5px;
+             /* margin-right: -5px; */ /* Adjust if needed */
+        }
+        /* Ensure the total row doesn't shrink */
+        .details-total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 5px; /* Keep padding */
+            border-top: 1px solid var(--border-color); /* Keep border */
+            font-weight: 600;
+            font-size: 1.0rem;
+            flex-shrink: 0; /* IMPORTANT: Prevent this row from shrinking */
+        }
+        /* --- End Category Details Layout --- */
+
+
+        /* --- Transaction List Item Styles (Single Line) --- */
+        .transaction-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;    /* Align text baselines */
+            padding: 8px 5px;         /* Adjust vertical padding if needed */
+            border-bottom: 1px solid var(--border-color);
+            line-height: 1.5;         /* Adjust line height if needed */
+            overflow: hidden;         /* Prevent content spill */
+        }
+        .transaction-list-item:last-child { border-bottom: none; }
+
+        /* Container for Date, Description, Location */
+        .transaction-left-col {
+            display: flex;            /* Arrange items in a row */
+            align-items: baseline;    /* Align text baselines */
+            flex-grow: 1;             /* Allow this column to take available space */
+            margin-right: 15px;       /* Space before amount */
+            overflow: hidden;         /* Hide overflow within this column */
+            gap: 8px;                 /* Space between Date, Desc, Location */
+        }
+
+        .transaction-date-short {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            flex-shrink: 0;           /* Don't let date shrink */
+            white-space: nowrap;      /* Prevent date wrapping */
+            min-width: 50px;          /* Ensure minimum space for date */
+        }
+
+        .transaction-description-short {
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            overflow: hidden;         /* Required for ellipsis */
+            white-space: nowrap;      /* Required for ellipsis */
+            text-overflow: ellipsis;  /* Add ... if too long */
+        }
+
+        .transaction-location-inline {
+            font-size: 0.75rem;       /* Smaller font size */
+            color: var(--text-secondary); /* Dimmer color */
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            flex-shrink: 1;           /* Allow location to shrink if space is needed */
+        }
+
+        .transaction-amount-short {
+            color: var(--text-primary);
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;           /* Don't let amount shrink */
+            text-align: right;
+            font-size: 0.85rem;
+        }
+        /* --- End Transaction Item Styles --- */
+
+        .no-expenses-message { color: var(--text-secondary); font-style: italic; margin-top: 20px; text-align: center; font-size: 0.9rem; padding: 20px; }
+
+        /* --- Scrollbar, Tooltip --- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #444c58; border-radius: 4px; border: 2px solid var(--bg-card); } ::-webkit-scrollbar-thumb:hover { background: #555e6d; }
+        div.chartjs-tooltip { background: var(--bg-base); border-radius: 6px; color: var(--text-primary); opacity: 1; pointer-events: none; position: absolute; transform: translate(-50%, -115%); transition: all .1s ease; padding: 10px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.35); border: 1px solid var(--border-color); font-family: var(--font-family); font-size: 13px; z-index: 10; min-width: 120px; } div.chartjs-tooltip table { margin: 0px; width: 100%; } div.chartjs-tooltip th { font-weight: 600; padding-bottom: 6px; text-align: left; border-bottom: 1px solid var(--border-color); margin-bottom: 6px; display: block; color: var(--text-primary);} div.chartjs-tooltip td { border-width: 0; padding: 3px 0; display: flex; align-items: center; color: var(--text-primary);} div.chartjs-tooltip span.tooltip-swatch { border-width: 0px; margin-right: 8px; height: 10px; width: 10px; border-radius: 3px; display: inline-block; }
+
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">Expense Tracker</div> <!-- Updated Name -->
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="#" class="active"><i data-feather="grid"></i>Dashboard</a></li>
+                <li><a href="#"><i data-feather="pie-chart"></i>Reports <span class="coming-soon-badge">Soon</span></a></li>
+                <li><a href="#"><i data-feather="list"></i>Transactions <span class="coming-soon-badge">Soon</span></a></li>
+                <li><a href="#"><i data-feather="target"></i>Budgets <span class="coming-soon-badge">Soon</span></a></li>
+                <li><a href="#"><i data-feather="settings"></i>Settings <span class="coming-soon-badge">Soon</span></a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Area -->
+    <main class="main-area">
+        <div class="main-content-wrapper">
+             <!-- Header Controls -->
+             <div class="main-content-header-controls">
+                 <div class="month-navigator">
+                     <button id="prev-month" title="Previous Month" disabled><i data-feather="chevron-left"></i></button>
+                     <div class="current-month" id="current-month-display">Loading...</div>
+                     <button id="next-month" title="Next Month" disabled><i data-feather="chevron-right"></i></button>
+                 </div>
+                 <div class="total-spend">
+                     <div class="total-spend-label">Total Spent This Month</div>
+                     <div class="total-spend-amount" id="total-spend-amount">---</div>
+                 </div>
+             </div>
+             <!-- Dashboard Core -->
+            <div class="dashboard-core">
+                 <div class="graph-container">
+                    <div class="container-header" id="graph-header"> <h2 class="container-title" id="graph-title">Spending by Category</h2> <!-- Back button added dynamically --> </div>
+                    <div class="chart-wrapper"> <canvas id="expense-chart"></canvas> </div>
+                </div>
+                <div class="category-list-container">
+                    <div class="container-header" id="list-header"> <h2 class="container-title" id="category-list-title">Top Categories</h2> <!-- Back button added dynamically --> </div>
+                    <div id="category-content"> <p class="no-expenses-message">Loading data...</p> </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Feather Icons Initialization (run early)
+        feather.replace();
+
+        // Register DataLabels plugin with Chart.js
+        if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
+             Chart.register(ChartDataLabels);
+        } else {
+             console.error("Chart.js or ChartDataLabels not loaded before registration attempt.");
+        }
+
+        // --- DOM Elements ---
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+        const currentMonthDisplay = document.getElementById('current-month-display');
+        const categoryContent = document.getElementById('category-content'); // Parent for event delegation
+        const categoryListTitle = document.getElementById('category-list-title');
+        const totalSpendAmountEl = document.getElementById('total-spend-amount');
+        // const expenseChartCanvas = document.getElementById('expense-chart'); // Canvas is added/removed dynamically
+        const graphTitleElement = document.getElementById('graph-title');
+        const listContainerHeader = document.getElementById('list-header');
+        const graphContainerHeader = document.getElementById('graph-header');
+        const chartWrapperElement = document.querySelector('.chart-wrapper');
+
+        // --- State ---
+        let expenseChart = null;
+        let currentViewMode = 'monthlyOverview';
+        let selectedCategoryForHistory = null;
+        let dashboardData = {};
+        let monthKeys = [];
+        let currentMonthIndex = -1;
+
+        // --- Helpers, Chart Defaults ---
+        const getCssVarValue = (varName) => getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+        const formatCurrency = (amount) => {
+             const numAmount = Number(amount);
+             if (isNaN(numAmount)) return 'R --.--';
+             return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numAmount);
+        };
+        function setChartDefaults() {
+            try {
+                Chart.defaults.color = getCssVarValue('--text-secondary');
+                Chart.defaults.borderColor = getCssVarValue('--grid-line-color');
+                Chart.defaults.font.family = getCssVarValue('--font-family');
+                Chart.defaults.font.size = 12;
+                // Globally disable default tooltips if using custom external one + datalabels
+                Chart.defaults.plugins.tooltip.enabled = false;
+                // Configure datalabels defaults (can be overridden per chart)
+                Chart.defaults.plugins.datalabels.display = false; // Default to off, enable per chart
+
+            } catch (e) { console.error("Error setting Chart defaults:", e); }
+        }
+        const categoryColors = [ { inner: '--c1' }, { inner: '--c2' }, { inner: '--c3' }, { inner: '--c4' }, { inner: '--c5' }, { inner: '--c6' }, { inner: '--c7' }, { inner: '--c8' }, { inner: '--c9' }, { inner: '--c10' } ];
+        function hexToRGBA(hex, alpha) {
+             hex = hex.replace('#', '');
+             if (hex.length === 3) { hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2]; }
+             const r = parseInt(hex.substring(0, 2), 16);
+             const g = parseInt(hex.substring(2, 4), 16);
+             const b = parseInt(hex.substring(4, 6), 16);
+             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        // --- Icon Mapping ---
+        const categoryIconMap = {
+            'Groceries': 'shopping-cart', 'Rent': 'home', 'Uncategorised': 'tag', 'Fuel': 'truck', 'Takeaways': 'package', 'Restaurants': 'coffee', 'Licence': 'file-text', 'Sport & Hobbies': 'activity', 'Cellphone': 'smartphone', 'Donations': 'gift', 'Clothing & Shoes': 'shopping-bag', 'Other Transport': 'navigation',
+            'Default': 'tag' // Fallback icon
+        };
+        function getIconNameForCategory(categoryName) {
+            const lowerCaseName = categoryName?.toLowerCase();
+            for (const key in categoryIconMap) {
+                if (key.toLowerCase() === lowerCaseName) { return categoryIconMap[key]; }
+            }
+            return categoryIconMap['Default'] || 'tag';
+        }
+        // --- End Icon Mapping ---
+
+        // --- Historical Data ---
+        function getHistoricalDataForCategory(categoryName, numMonths = 10) { // Default to 10 months
+             const historicalLabels = [];
+             const historicalAmounts = [];
+             const backgroundColors = [];
+             const fullMonthKeys = [];
+             const historyOpacity = parseFloat(getCssVarValue('--history-bar-opacity')) || 0.45;
+
+             if (!monthKeys.length || currentMonthIndex < 0) { return { labels: [], datasets: [], fullKeys: [] }; }
+
+             // Find base color (improved logic for "Other")
+             let categoryIndexInCurrentMonth = -1;
+             let currentMonthCategories = dashboardData[monthKeys[currentMonthIndex]]?.categories;
+             if (currentMonthCategories) {
+                 if (categoryName === "Other") {
+                     // Find index of "Other" if it exists, otherwise use last color index
+                     const otherIndex = currentMonthCategories.findIndex(c => c.name === "Other");
+                     categoryIndexInCurrentMonth = otherIndex !== -1 ? otherIndex : categoryColors.length - 1; // Fallback to last color index
+                 } else {
+                     categoryIndexInCurrentMonth = currentMonthCategories.findIndex(c => c.name === categoryName);
+                 }
+             }
+             // If still not found (e.g., category exists historically but not in current month's top N), use fallback
+             if (categoryIndexInCurrentMonth === -1) {
+                 categoryIndexInCurrentMonth = categoryColors.length - 1; // Use the 'Other' color index as fallback
+             }
+
+             const categoryBaseColorVar = categoryColors[categoryIndexInCurrentMonth % categoryColors.length].inner;
+             const categoryBaseColorHex = getCssVarValue(categoryBaseColorVar);
+
+             const startIndex = Math.max(0, currentMonthIndex - numMonths + 1);
+
+             let tempLabels = [], tempAmounts = [], tempColors = [], tempFullKeys = [];
+             for (let i = startIndex; i <= currentMonthIndex; i++) {
+                 const monthKey = monthKeys[i];
+                 const month = dashboardData[monthKey];
+                 if (!month || !month.details) continue; // Skip if no month data or details
+
+                 tempLabels.push(monthKey.substring(0, 3)); // e.g., "Apr"
+                 tempFullKeys.push(monthKey);
+
+                 let categoryData = 0;
+                 if (categoryName === "Other") {
+                      // Calculate "Other" total for this historical month
+                      const displayedCatsHist = month.categories || [];
+                      const topCatsHistNames = displayedCatsHist.map(c => c.name).filter(n => n !== "Other");
+                      const allDetailKeysHist = Object.keys(month.details || {});
+                      const otherKeysHist = allDetailKeysHist.filter(k => !topCatsHistNames.includes(k));
+                      otherKeysHist.forEach(key => {
+                         categoryData += (month.details[key] || []).reduce((sum, item) => sum + item.amount, 0);
+                      });
+                 } else {
+                     // Get data for a specific category
+                     categoryData = (month.details[categoryName] || []).reduce((sum, item) => sum + item.amount, 0);
+                 }
+
+                 tempAmounts.push(categoryData);
+                 tempColors.push(hexToRGBA(categoryBaseColorHex, historyOpacity)); // Use consistent base color with opacity
+             }
+
+             // Reverse arrays for chart display (most recent month first visually if needed, though chart reverses y-axis)
+             historicalLabels.push(...tempLabels.reverse());
+             historicalAmounts.push(...tempAmounts.reverse());
+             backgroundColors.push(...tempColors.reverse());
+             fullMonthKeys.push(...tempFullKeys.reverse());
+
+             return {
+                 labels: historicalLabels,
+                 datasets: [{
+                     label: categoryName,
+                     data: historicalAmounts,
+                     backgroundColor: backgroundColors.slice(), // Use processed colors
+                     borderWidth: 0,
+                     borderRadius: 4,
+                     // barPercentage/categoryPercentage set in createOrUpdateChart
+                     originalColors: backgroundColors.slice(), // Store the non-highlighted colors
+                     highlightColor: categoryBaseColorHex // Store the solid base color for highlighting
+                 }],
+                 fullKeys: fullMonthKeys
+             };
+         }
+
+        // --- Chart ---
+        function handleChartClick(event, elements, chart) {
+            if (elements.length > 0 && currentViewMode === 'monthlyOverview') {
+                const elementIndex = elements[0].index;
+                const categoryName = chart.data.labels[elementIndex];
+                if (categoryName) {
+                    switchToCategoryDetailView(categoryName);
+                }
+            }
+         }
+        function createOrUpdateChart(chartDataInput, viewType = 'monthlyOverview') {
+             if (expenseChart) { expenseChart.destroy(); expenseChart = null; }
+             const existingMessage = chartWrapperElement.querySelector('.no-expenses-message');
+             if (existingMessage) { existingMessage.remove(); }
+             if (!chartWrapperElement.querySelector('#expense-chart')) {
+                 const canvas = document.createElement('canvas');
+                 canvas.id = 'expense-chart';
+                 chartWrapperElement.appendChild(canvas);
+             }
+             const ctx = chartWrapperElement.querySelector('#expense-chart')?.getContext('2d');
+             if (!ctx) { console.error("Canvas context not found."); return; }
+
+             const textColorPrimary = getCssVarValue('--text-primary');
+             const textColorSecondary = getCssVarValue('--text-secondary');
+             const gridColor = getCssVarValue('--grid-line-color');
+             let data, options;
+
+             // --- Common DataLabel Config ---
+             const commonDataLabelConfig = {
+                 display: true, // Enable datalabels for both chart types
+                 anchor: 'end',
+                 align: 'end',
+                 offset: 6,
+                 padding: 0,
+                 color: getCssVarValue('--text-secondary'),
+                 font: { size: 10, weight: 500 },
+                 formatter: (value, context) => {
+                     // Optional: Hide labels for zero values
+                     // if (value === 0) return null;
+                     return formatCurrency(value);
+                 }
+             };
+             // --- End Common DataLabel Config ---
+
+             if (viewType === 'categoryHistory') {
+                 data = chartDataInput;
+                 const dataset = data.datasets && data.datasets[0] ? data.datasets[0] : { data: [0], label: 'History' };
+                 dataset.barPercentage = 0.8; // Consistency
+                 dataset.categoryPercentage = 0.8; // Consistency
+                 dataset.label = dataset.label || 'History';
+                 dataset.backgroundColor = dataset.backgroundColor || dataset.originalColors || [getCssVarValue('--accent')];
+                 dataset.borderWidth = dataset.borderWidth === undefined ? 0 : dataset.borderWidth;
+                 dataset.borderRadius = dataset.borderRadius === undefined ? 4 : dataset.borderRadius;
+
+                 const amounts = dataset.data || [0];
+                 const maxAmount = amounts.length > 0 ? Math.max(...amounts.filter(v => !isNaN(v))) : 100; // Ensure only numbers are considered
+
+                 options = {
+                     responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+                     scales: {
+                         x: { beginAtZero: true, suggestedMax: maxAmount * 1.22, // Increased for label space
+                             ticks: { color: textColorSecondary, font: { size: 11 }, padding: 8 },
+                             grid: { color: gridColor, drawTicks: false, borderDash: [3, 3] },
+                             border: { display: false },
+                             title: { display: true, text: 'Amount (R)', color: textColorSecondary, font: {size: 10, weight: '500'}, padding: {top: 10}}
+                         },
+                         y: { ticks: { color: textColorPrimary, font: { size: 12, weight: 500 }, padding: 10 }, grid: { display: false }, border: { display: false }, title: { display: false } }
+                     },
+                     plugins: {
+                         legend: { display: false },
+                         tooltip: { enabled: false, external: externalTooltipHandler }, // Use custom external tooltip
+                         datalabels: commonDataLabelConfig // Apply common datalabel config
+                     },
+                     layout: { padding: { top: 5, bottom: 5, left: 5, right: 15 } },
+                     onClick: handleHistoryChartClick
+                 };
+                 expenseChart = new Chart(ctx, { type: 'bar', data: data, options: options });
+                 if (expenseChart) {
+                     expenseChart.fullKeys = chartDataInput.fullKeys || [];
+                     expenseChart.originalColors = dataset.originalColors || [];
+                     expenseChart.highlightColor = dataset.highlightColor || getCssVarValue('--accent');
+                 }
+
+             } else { // Monthly Overview
+                 const categories = chartDataInput.categories || [];
+                 if (categories.length === 0) { /* ... no data message ... */ return; }
+
+                 const backgroundColors = categories.map((category, index) => getCssVarValue(categoryColors[index % categoryColors.length].inner));
+                 const amounts = categories.map(cat => cat.amount);
+                 const maxAmount = amounts.length > 0 ? Math.max(...amounts.filter(v => !isNaN(v))) : 100;
+
+                 data = {
+                     labels: categories.map(cat => cat.name),
+                     datasets: [{ data: amounts, backgroundColor: backgroundColors, borderWidth: 0, borderRadius: 4, barPercentage: 0.8, categoryPercentage: 0.8 }]
+                 };
+                 options = {
+                     responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+                     scales: {
+                         x: { beginAtZero: true, suggestedMax: maxAmount * 1.18, // Increased for label space
+                             ticks: { color: textColorSecondary, font: { size: 11 }, padding: 8 },
+                             grid: { color: gridColor, drawTicks: false, borderDash: [3, 3] },
+                             border: { display: false },
+                             title: { display: true, text: 'Amount (R)', color: textColorSecondary, font: {size: 10, weight: '500'}, padding: {top: 10}}
+                         },
+                         y: { ticks: { color: textColorPrimary, font: { size: 12, weight: 500 }, padding: 12 }, grid: { display: false }, border: { display: false }, title: { display: false } }
+                     },
+                     plugins: {
+                         legend: { display: false },
+                         tooltip: { enabled: false, external: externalTooltipHandler }, // Use custom external tooltip
+                         datalabels: commonDataLabelConfig // Apply common datalabel config
+                     },
+                     layout: { padding: { top: 5, bottom: 5, left: 5, right: 15 } },
+                     onClick: handleChartClick
+                 };
+                 expenseChart = new Chart(ctx, { type: 'bar', data: data, options: options });
+             }
+         } // --- End of createOrUpdateChart ---
+
+        // --- Custom Tooltip ---
+        const getOrCreateTooltip = (chart) => {
+             let tooltipEl = chartWrapperElement.querySelector('div.chartjs-tooltip');
+             if (!tooltipEl) {
+                 tooltipEl = document.createElement('div');
+                 tooltipEl.classList.add('chartjs-tooltip');
+                 tooltipEl.style.cssText = `background: var(--bg-base); border-radius: 6px; color: var(--text-primary); opacity: 1; pointer-events: none; position: absolute; transform: translate(-50%, -115%); transition: all .1s ease; padding: 10px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.35); border: 1px solid var(--border-color); font-family: var(--font-family); font-size: 13px; z-index: 10; min-width: 120px;`;
+                 const table = document.createElement('table');
+                 table.style.cssText = `margin: 0px; width: 100%;`;
+                 tooltipEl.appendChild(table);
+                 chartWrapperElement.appendChild(tooltipEl); // Append to wrapper, not chart directly
+             }
+             return tooltipEl;
+         };
+        const externalTooltipHandler = (context) => {
+              const { chart, tooltip } = context;
+              const tooltipEl = getOrCreateTooltip(chart);
+              if (tooltip.opacity === 0) { tooltipEl.style.opacity = 0; return; }
+              if (tooltip.body) {
+                  const titleLines = tooltip.title || [];
+                  const bodyLines = tooltip.body.map(b => b.lines);
+                  const tableHead = document.createElement('thead');
+                  titleLines.forEach(title => {
+                      const tr = document.createElement('tr'); const th = document.createElement('th');
+                      th.style.cssText = `font-weight: 600; padding-bottom: 6px; text-align: left; border-bottom: 1px solid var(--border-color); margin-bottom: 6px; display: block; color: var(--text-primary);`;
+                      th.appendChild(document.createTextNode(title)); tr.appendChild(th); tableHead.appendChild(tr);
+                  });
+                  const tableBody = document.createElement('tbody');
+                  bodyLines.forEach((body, i) => {
+                      const colors = tooltip.labelColors[i];
+                      const span = document.createElement('span'); span.classList.add('tooltip-swatch');
+                      span.style.cssText = `background: ${colors.backgroundColor}; border-width: 0px; margin-right: 8px; height: 10px; width: 10px; border-radius: 3px; display: inline-block;`;
+                      const tr = document.createElement('tr'); const td = document.createElement('td');
+                      td.style.cssText = `border-width: 0; padding: 3px 0; display: flex; align-items: center; color: var(--text-primary);`;
+                      let amount = 0;
+                      if (tooltip.dataPoints[0]?.parsed) { amount = chart.options.indexAxis === 'y' ? tooltip.dataPoints[0].parsed.x : tooltip.dataPoints[0].parsed.y; }
+                      td.appendChild(span); td.appendChild(document.createTextNode(formatCurrency(amount)));
+                      tr.appendChild(td); tableBody.appendChild(tr);
+                  });
+                  const tableRoot = tooltipEl.querySelector('table');
+                  while (tableRoot.firstChild) { tableRoot.firstChild.remove(); }
+                  tableRoot.appendChild(tableHead); tableRoot.appendChild(tableBody);
+              }
+              const {offsetLeft: positionX, offsetTop: positionY} = chart.canvas;
+              tooltipEl.style.opacity = 1;
+              tooltipEl.style.left = positionX + tooltip.caretX + 'px';
+              tooltipEl.style.top = positionY + tooltip.caretY + 'px';
+              tooltipEl.style.padding = tooltip.options.padding + 'px ' + tooltip.options.padding + 'px';
+         };
+
+        // --- UI Updates ---
+        function formatTransactionRow(item) {
+            let description = item.description || 'N/A'; let dateStr = item.date || 'No Date'; let displayDate = ''; const originalDescription = item.description || ''; let location = '';
+            description = description.trim();
+            const feeMap = { "Monthly Account Admin Fee": "Admin Fee", "Debit Order Fee": "Debit Fee", "External Payment Fee": "Payment Fee", "Immediate Payment Fee": "Immed. Fee", "Cash Sent Fee": "Cash Send Fee", "International Processing Fee": "Intl. Fee", "Licence Disc Renewal Fee": "Licence Fee", "Prepaid Mobile Purchase Fee": "Prepaid Fee", "Prepaid Electricity Purchase Fee": "Prepaid Fee", "Capitec Pay Fee": "Capitec Pay Fee", "Banking App Recurring External Payment Fee": "Rec. Payment Fee" };
+            if (feeMap[description]) { description = feeMap[description]; }
+            else {
+                description = description.replace(/\s*\(Card \d+\)/gi, ''); // Remove Card ID FIRST
+                const knownLocations = ['Benoni', 'Cape Town', 'Johannesburg', 'Pretoria', 'Durban', 'Rosebank', 'Sandton', 'Rondebosch', 'Claremont', 'Milnerton', 'Bellville', 'Parow', 'Goodwood', 'Edgemead', 'Bothasig', 'Woodstock', 'Maitland', 'Sea Point', 'Table View', 'Bloubergstran', 'Tokai', 'Kalk Bay', 'Somerset West', 'Stellenbosch', 'Paarl', 'Wellington', 'Villiers', 'Kroonstad', 'Bethlehem', 'Luckhoff', 'Petrusville', 'Richmond', 'Laingsburg', 'Beaufort West', 'Rynfield', 'Northmead', 'Farrarmere', 'Boksburg', 'Brakpan', 'Germiston', 'Kempton Park', 'Westcliffe', 'Bellevue', 'Montana', 'Stockholm', 'London', 'Madrid', 'Century City', 'Sunningdale', 'Plattekloof', 'Gardens', 'Green Point', 'Observatory', 'Newlands', 'Waterfront', 'Clarens', 'Brooklyn', 'Hartbeespoort', 'Kuils River', 'Retreat', 'Pinehurst', 'Panorama', 'Kenilworth', 'Tableview', 'Monte Vista', 'Vredehoek', 'Camps Bay', 'Mowbray', 'Oranjezicht', 'Durbanville', 'Tyger Valley', 'Sunset Beach', 'Big Bay', 'Upper Claremont', 'Gauteng', 'Western Cape', 'Free State', 'North West'];
+                const knownLocationPattern = new RegExp(`\\s+(${knownLocations.join('|')})(?:\\s+[A-Z]{2,})?$`, 'i');
+                const knownLocationMatch = description.match(knownLocationPattern);
+                if (knownLocationMatch) { location = knownLocationMatch[1].trim(); description = description.substring(0, knownLocationMatch.index).trim(); }
+                description = description.replace(/^(Banking App (External|Immediate|Recurring External) Payment|Banking App Cash Sent|Banking App Transfer to Spare Account|Card Purchase|Recurring Card Purchase|Online Purchase|Purchase Refund|Immediate Capitec Pay Payment):\s*/i, '');
+                description = description.replace(/^(Yoco|SnapScan|iK|PAYFAST|ZAPPER|HPY|S2S|TABBS)\s*\*?\s*/i, '');
+                description = description.replace(/^(Eft Debit Order|Recurring Payment)\s*\([^)]+\):\s*/i, '');
+                description = description.replace(/\s+(Pty Ltd|Ltd|Cc)$/i, ''); description = description.replace(/\s+\(Pty\)\s+Ltd$/i, '');
+                description = description.replace(/^Card Purchase Limit Exceeded Fee:/i, 'Limit Fee:'); description = description.replace(/\s+Cape Town Int$/i, '');
+                description = description.replace(/\s+/g, ' ').trim();
+            }
+            if (dateStr !== 'No Date') { try { const match = dateStr.match(/^(\d{4}-\d{2}-\d{2})/); const dateOnly = match ? match[1] : dateStr; const dateObj = new Date(dateOnly + 'T00:00:00Z'); if (!isNaN(dateObj.getTime())) { displayDate = dateObj.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' }); } else { displayDate = dateStr; } } catch (e) { console.warn("Date formatting error:", e); displayDate = dateStr; } } else { displayDate = "---"; }
+            return `<div class="transaction-list-item"><div class="transaction-left-col"><span class="transaction-date-short">${displayDate}</span><span class="transaction-description-short" title="${originalDescription}">${description}</span>${location ? `<span class="transaction-location-inline">${location}</span>` : ''}</div><span class="transaction-amount-short">${formatCurrency(item.amount)}</span></div>`;
+        }
+        function displayCategoryList(monthData) {
+            categoryListTitle.textContent = "Top Categories";
+            const categoriesToShow = monthData?.categories || [];
+            let listHTML = '';
+            if (categoriesToShow.length === 0) { listHTML = `<p class="no-expenses-message">No spending categories found.</p>`; }
+            else {
+                listHTML = `<ul class="category-list" id="category-list-ul">`;
+                categoriesToShow.forEach((category, index) => {
+                    const categoryName = category.name; const iconName = getIconNameForCategory(categoryName); const innerColorVar = categoryColors[index % categoryColors.length].inner;
+                    listHTML += `<li class="category-item" data-category="${categoryName}" style="--inner-color: var(${innerColorVar});"><i data-feather="${iconName}"></i><span class="category-name">${categoryName}</span><span class="category-amount">${formatCurrency(category.amount)}</span></li>`;
+                });
+                listHTML += `</ul>`;
+            }
+            categoryContent.innerHTML = listHTML; // Update container
+            try { feather.replace({ width: 18, height: 18, 'stroke-width': 2 }); } // Render icons
+            catch (e) { console.error("Feather Error:", e); }
+            // Listener is on parent #category-content, no need to re-attach here
+        }
+        function displayCategoryDetails(categoryName, transactionsArray) {
+            categoryListTitle.textContent = categoryName; // Just the name for simplicity
+            const expenses = transactionsArray || [];
+            let total = expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            let transactionsHTML = '';
+            if (expenses.length > 0) { expenses.forEach(item => { transactionsHTML += formatTransactionRow(item); }); }
+            let detailsHTML = `<div class="category-details"><div class="transactions-scroll-wrapper">${expenses.length > 0 ? transactionsHTML : `<p class="no-expenses-message">No expenses recorded for ${categoryName} this month.</p>`}</div>${expenses.length > 0 ? `<div class="details-total-row"><span>Total</span><span>${formatCurrency(total)}</span></div>` : ''}</div>`;
+            categoryContent.innerHTML = detailsHTML;
+        }
+        function displayHistoricalCategoryDetails(categoryName, monthKey, transactionsArray) {
+             categoryListTitle.textContent = `${categoryName} - ${monthKey}`; // Include month for history clicks
+             const expenses = transactionsArray || [];
+             let total = expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+             let transactionsHTML = '';
+             if (expenses.length > 0) { expenses.forEach(item => { transactionsHTML += formatTransactionRow(item); }); }
+             let detailsHTML = `<div class="category-details"><div class="transactions-scroll-wrapper">${expenses.length > 0 ? transactionsHTML : `<p class="no-expenses-message">No expenses recorded for ${categoryName} in ${monthKey}.</p>`}</div>${expenses.length > 0 ? `<div class="details-total-row"><span>Total</span><span>${formatCurrency(total)}</span></div>` : ''}</div>`;
+             categoryContent.innerHTML = detailsHTML;
+         }
+
+        // --- Helper Functions for Back Button ---
+        function addBackButton(headerElement, buttonId) {
+             removeBackButton(headerElement, buttonId); // Prevent duplicates
+             const backButton = document.createElement('button');
+             backButton.id = buttonId;
+             backButton.className = 'back-button-header';
+             backButton.innerHTML = `<i data-feather="arrow-left"></i>Back`;
+             backButton.addEventListener('click', () => {
+                 currentViewMode = 'monthlyOverview';
+                 selectedCategoryForHistory = null;
+                 updateDashboardUI(monthKeys[currentMonthIndex]); // Go back to overview for current month
+             });
+             headerElement.appendChild(backButton);
+             feather.replace({ width: 15, height: 15 }); // Render icon
+         }
+        function removeBackButton(headerElement, buttonId) {
+             const button = headerElement.querySelector(`#${buttonId}`);
+             if (button) button.remove();
+         }
+
+        // --- Event Handlers ---
+        function switchToCategoryDetailView(categoryName) {
+            const currentMonthKey = monthKeys[currentMonthIndex];
+            const monthData = dashboardData[currentMonthKey];
+            if (!monthData) { console.error("SwitchToDetail: No data for month:", currentMonthKey); return; }
+
+            currentViewMode = 'categoryHistory';
+            selectedCategoryForHistory = categoryName;
+            let transactionsToShow = [];
+
+            if (categoryName === "Other") {
+                const displayedCategories = monthData.categories || [];
+                const topCategoryNames = displayedCategories.map(cat => cat.name).filter(name => name !== "Other");
+                const allDetailKeys = Object.keys(monthData.details || {});
+                // Filter keys NOT in Top N (excluding "Other" itself)
+                const otherContributingKeys = allDetailKeys.filter(key => !topCategoryNames.includes(key));
+                otherContributingKeys.forEach(key => {
+                    const categoryTransactions = monthData.details[key];
+                    if (categoryTransactions && categoryTransactions.length > 0) { transactionsToShow.push(...categoryTransactions); }
+                });
+                transactionsToShow.sort((a, b) => new Date(b.date) - new Date(a.date));
+            } else {
+                transactionsToShow = monthData.details?.[categoryName] || [];
+                transactionsToShow.sort((a, b) => new Date(b.date) - new Date(a.date)); // Ensure sort
+            }
+
+            updateGraphForHistory(categoryName);
+            displayCategoryDetails(categoryName, transactionsToShow);
+            addBackButton(listContainerHeader, 'back-to-list-header');
+            addBackButton(graphContainerHeader, 'back-to-graph-header');
+            requestAnimationFrame(() => { if(expenseChart) { highlightHistoryBarForMonth(currentMonthKey); } });
+        }
+        function handleCategoryListItemClick(event) {
+             const categoryItem = event.target.closest('.category-item'); // Use delegation
+             if (categoryItem && categoryItem.dataset.category) {
+                 const category = categoryItem.dataset.category;
+                 switchToCategoryDetailView(category);
+             }
+        }
+        function handleHistoryChartClick(event, elements, chart) {
+              if (elements.length > 0 && chart && chart.fullKeys && selectedCategoryForHistory) {
+                  const elementIndex = elements[0].index;
+                  const clickedMonthKey = chart.fullKeys[elementIndex];
+                  const categoryName = selectedCategoryForHistory;
+                  if (clickedMonthKey && dashboardData[clickedMonthKey]) {
+                      const transactions = dashboardData[clickedMonthKey].details?.[categoryName] || [];
+                      // Recalculate transactions if "Other" was clicked
+                      let transactionsForClickedMonth = [];
+                      if (categoryName === "Other") {
+                          const monthDataHist = dashboardData[clickedMonthKey];
+                          const displayedCatsHist = monthDataHist.categories || [];
+                          const topCatsHistNames = displayedCatsHist.map(c => c.name).filter(n => n !== "Other");
+                          const allDetailKeysHist = Object.keys(monthDataHist.details || {});
+                          const otherKeysHist = allDetailKeysHist.filter(k => !topCatsHistNames.includes(k));
+                          otherKeysHist.forEach(key => {
+                              const catTransHist = monthDataHist.details[key];
+                              if (catTransHist && catTransHist.length > 0) { transactionsForClickedMonth.push(...catTransHist); }
+                          });
+                          transactionsForClickedMonth.sort((a,b) => new Date(b.date) - new Date(a.date));
+                      } else {
+                          transactionsForClickedMonth = (dashboardData[clickedMonthKey].details?.[categoryName] || []).sort((a,b) => new Date(b.date) - new Date(a.date));
+                      }
+
+                      try { // Highlight clicked bar
+                          const dataset = chart.data.datasets[0];
+                          const newBackgroundColors = chart.originalColors.slice();
+                          newBackgroundColors[elementIndex] = chart.highlightColor;
+                          dataset.backgroundColor = newBackgroundColors;
+                          chart.update('none');
+                      } catch (highlightError) { console.error("Error highlighting chart bar:", highlightError); }
+                      // Display details for the CLICKED month
+                      displayHistoricalCategoryDetails(categoryName, clickedMonthKey, transactionsForClickedMonth);
+                      // Ensure back button is present (it might already be)
+                      addBackButton(listContainerHeader, 'back-to-list-header');
+                  } else {
+                      console.warn(`Data not found for ${categoryName} in ${clickedMonthKey}`);
+                      categoryContent.innerHTML = `<p class="no-expenses-message">No transaction data found for ${categoryName} in ${clickedMonthKey}.</p>`;
+                      categoryListTitle.textContent = `${categoryName} - ${clickedMonthKey}`;
+                      addBackButton(listContainerHeader, 'back-to-list-header');
+                  }
+              }
+         }
+        // --- UPDATED Month Navigation ---
+        prevMonthBtn.addEventListener('click', () => {
+            if (currentMonthIndex > 0) {
+                currentMonthIndex--;
+                const newMonthKey = monthKeys[currentMonthIndex];
+                if (currentViewMode === 'categoryHistory' && selectedCategoryForHistory) {
+                    updateCategoryDetailForNewMonth(newMonthKey, selectedCategoryForHistory);
+                } else {
+                    currentViewMode = 'monthlyOverview'; selectedCategoryForHistory = null;
+                    updateDashboardUI(newMonthKey);
+                }
+            }
+        });
+        nextMonthBtn.addEventListener('click', () => {
+            if (currentMonthIndex < monthKeys.length - 1) {
+                currentMonthIndex++;
+                const newMonthKey = monthKeys[currentMonthIndex];
+                 if (currentViewMode === 'categoryHistory' && selectedCategoryForHistory) {
+                    updateCategoryDetailForNewMonth(newMonthKey, selectedCategoryForHistory);
+                 } else {
+                    currentViewMode = 'monthlyOverview'; selectedCategoryForHistory = null;
+                    updateDashboardUI(newMonthKey);
+                 }
+            }
+        });
+        // --- End Event Handlers ---
+
+        // --- Core Update Functions ---
+        function updateGraphForHistory(categoryName) {
+              const historyData = getHistoricalDataForCategory(categoryName, 10); // Use 10 months
+              graphTitleElement.textContent = categoryName; // Simplified title
+              createOrUpdateChart(historyData, 'categoryHistory');
+         }
+        function updateDashboardUI(monthKey) {
+              const data = dashboardData[monthKey];
+              currentViewMode = 'monthlyOverview'; selectedCategoryForHistory = null; // Reset state
+              removeBackButton(listContainerHeader, 'back-to-list-header'); // Clean up buttons
+              removeBackButton(graphContainerHeader, 'back-to-graph-header');
+              graphTitleElement.textContent = "Spending by Category"; // Reset titles
+              categoryListTitle.textContent = "Top Categories";
+
+              if (!data) { /* ... handle no data ... */ return; }
+
+              currentMonthDisplay.textContent = monthKey;
+              totalSpendAmountEl.textContent = formatCurrency(data.total);
+              requestAnimationFrame(() => { // Ensure UI updates smoothly
+                  createOrUpdateChart(data, 'monthlyOverview');
+                  displayCategoryList(data);
+              });
+              prevMonthBtn.disabled = (currentMonthIndex <= 0);
+              nextMonthBtn.disabled = (currentMonthIndex >= monthKeys.length - 1);
+         }
+        function highlightHistoryBarForMonth(monthKeyToHighlight) {
+            if (currentViewMode !== 'categoryHistory' || !expenseChart || !expenseChart.data?.datasets?.[0]) return;
+            if (!expenseChart.fullKeys || !expenseChart.originalColors || !expenseChart.highlightColor) { console.error("Highlight: Missing props on chart."); return; }
+            try {
+                const dataset = expenseChart.data.datasets[0];
+                const indexToHighlight = expenseChart.fullKeys.indexOf(monthKeyToHighlight);
+                const newBackgroundColors = expenseChart.originalColors.slice();
+                if (indexToHighlight !== -1) { newBackgroundColors[indexToHighlight] = expenseChart.highlightColor; }
+                else { console.warn(`Highlight: Key "${monthKeyToHighlight}" not found.`); }
+                dataset.backgroundColor = newBackgroundColors;
+                expenseChart.update('none');
+            } catch (error) { console.error("Error highlighting history bar:", error); }
+        }
+        function updateCategoryDetailForNewMonth(newMonthKey, categoryName) {
+            const data = dashboardData[newMonthKey];
+            currentMonthDisplay.textContent = newMonthKey;
+            totalSpendAmountEl.textContent = formatCurrency(data?.total || 0);
+            prevMonthBtn.disabled = (currentMonthIndex <= 0);
+            nextMonthBtn.disabled = (currentMonthIndex >= monthKeys.length - 1);
+
+            // Recalculate transactions for the specific category in the new month
+            let transactionsForNewMonth = [];
+             if (categoryName === "Other") {
+                 const monthDataNew = dashboardData[newMonthKey];
+                 if (monthDataNew && monthDataNew.details) {
+                     const displayedCatsNew = monthDataNew.categories || [];
+                     const topCatsNewNames = displayedCatsNew.map(c => c.name).filter(n => n !== "Other");
+                     const allDetailKeysNew = Object.keys(monthDataNew.details);
+                     const otherKeysNew = allDetailKeysNew.filter(k => !topCatsNewNames.includes(k));
+                     otherKeysNew.forEach(key => {
+                         const catTransNew = monthDataNew.details[key];
+                         if (catTransNew && catTransNew.length > 0) { transactionsForNewMonth.push(...catTransNew); }
+                     });
+                     transactionsForNewMonth.sort((a,b) => new Date(b.date) - new Date(a.date));
+                 }
+             } else {
+                 transactionsForNewMonth = (data?.details?.[categoryName] || []).sort((a,b) => new Date(b.date) - new Date(a.date));
+             }
+
+            displayCategoryDetails(categoryName, transactionsForNewMonth); // Update list
+            requestAnimationFrame(() => { highlightHistoryBarForMonth(newMonthKey); }); // Update graph highlight
+        }
+        // --- End Core Update Functions ---
+
+
+        // --- Data Loading Functions ---
+        function onDataLoaded(data) {
+             console.log("Data received from server:", data);
+             if (data.error) { onDataLoadError(new Error(data.error)); return; }
+             if (Object.keys(data).length === 0) { onDataLoadError(new Error("No expense data found in the sheet.")); currentMonthDisplay.textContent = "No Data"; return; }
+             dashboardData = data;
+             monthKeys = Object.keys(dashboardData).sort((a, b) => {
+                 try { const dateA = new Date(Date.parse(a.replace(/(\w+) (\d{4})/, '$1 1, $2'))); const dateB = new Date(Date.parse(b.replace(/(\w+) (\d{4})/, '$1 1, $2'))); if (!isNaN(dateA) && !isNaN(dateB)) { return dateA - dateB; } return a.localeCompare(b); }
+                 catch(e) { console.warn("Could not parse month keys for sorting:", a, b); return a.localeCompare(b); }
+             });
+             if (monthKeys.length > 0) {
+                 currentMonthIndex = monthKeys.length - 1; // Start at most recent month
+                 updateDashboardUI(monthKeys[currentMonthIndex]);
+             } else {
+                 onDataLoadError(new Error("No valid expense data found to display."));
+                 currentMonthDisplay.textContent = "No Data";
+             }
+             feather.replace(); // Ensure all initial icons render
+         }
+        function onDataLoadError(error) {
+             console.error("Error loading dashboard data:", error);
+             currentMonthDisplay.textContent = "Error"; totalSpendAmountEl.textContent = "Error";
+             categoryContent.innerHTML = `<p class="no-expenses-message" style="color: #e15759;">Failed to load data: ${error.message}. Check logs.</p>`;
+             if (expenseChart) expenseChart.destroy(); expenseChart = null;
+             const existingMessage = chartWrapperElement.querySelector('.no-expenses-message'); if (existingMessage) existingMessage.remove();
+             // Ensure canvas exists for potential future use, or clear wrapper
+             // chartWrapperElement.innerHTML = '<canvas id="expense-chart"></canvas>';
+             prevMonthBtn.disabled = true; nextMonthBtn.disabled = true;
+         }
+        // --- End Data Loading Functions ---
+
+        // --- Initialize ---
+        document.addEventListener('DOMContentLoaded', () => {
+             setChartDefaults();
+             currentMonthDisplay.textContent = "Loading...";
+             totalSpendAmountEl.textContent = "---";
+             categoryContent.innerHTML = "<p class='no-expenses-message'>Loading data...</p>";
+
+             // --- Attach listener to parent container using Delegation ---
+             const categoryContentElement = document.getElementById('category-content');
+             if (categoryContentElement) {
+                 categoryContentElement.addEventListener('click', handleCategoryListItemClick);
+                 // categoryContentElement._eventListenerAttached = true; // Flag no longer strictly needed but harmless
+             } else {
+                 console.error("Could not find #category-content element to attach listener.");
+             }
+             // --- End listener attachment ---
+
+             // Fetch data from backend
+             google.script.run
+                 .withSuccessHandler(onDataLoaded)
+                 .withFailureHandler(onDataLoadError)
+                 .getDataForDashboard();
+         });
+        // --- End Initialize ---
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark"> <!-- Default theme is dark -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker Dashboard</title>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        /* --- Configuration: Default Dark Mode --- */
+        :root {
+            --bg-primary-dark: #1a1d24;
+            --bg-secondary-dark: #252932;
+            --bg-tertiary-dark: #313641;
+            --text-primary-dark: #e0e6f0;
+            --text-secondary-dark: #a0a8b4;
+            --text-tertiary-dark: #767f8d;
+            --accent-primary-dark: #00f5d4; /* Teal */
+            --accent-secondary-dark: #00bfa5;
+            --color-success-dark: #34d399;
+            --color-warning-dark: #f59e0b;
+            --color-error-dark: #f43f5e;
+            --border-color-dark: #3e4450;
+            --border-highlight-dark: var(--accent-primary-dark);
+            --placeholder-color-dark: #5a6372;
+            --shadow-color-dark: rgba(0, 245, 212, 0.1);
+            --button-primary-text-dark: var(--bg-primary-dark);
+            --progress-bg-dark: var(--bg-tertiary-dark);
+            --amount-positive-dark: var(--color-success-dark);
+            --amount-negative-dark: var(--color-error-dark);
+        }
+
+        /* --- Configuration: Light Mode --- */
+        :root[data-theme="light"] {
+            --bg-primary-light: #f8f9fa;
+            --bg-secondary-light: #ffffff;
+            --bg-tertiary-light: #e9ecef;
+            --text-primary-light: #212529;
+            --text-secondary-light: #495057;
+            --text-tertiary-light: #6c757d;
+            --accent-primary-light: #00a991;
+            --accent-secondary-light: #007d6a;
+            --color-success-light: #198754;
+            --color-warning-light: #ffc107;
+            --color-error-light: #dc3545;
+            --border-color-light: #dee2e6;
+            --border-highlight-light: var(--accent-primary-light);
+            --placeholder-color-light: #adb5bd;
+            --shadow-color-light: rgba(0, 169, 145, 0.2);
+            --button-primary-text-light: #ffffff;
+            --progress-bg-light: var(--bg-tertiary-light);
+            --amount-positive-light: var(--color-success-light);
+            --amount-negative-light: var(--color-error-light);
+        }
+
+        /* --- Theme Variable Mapping --- */
+        :root {
+            /* Map generic variables */
+            --bg-primary: var(--bg-primary-dark);
+            --bg-secondary: var(--bg-secondary-dark);
+            --bg-tertiary: var(--bg-tertiary-dark);
+            --text-primary: var(--text-primary-dark);
+            --text-secondary: var(--text-secondary-dark);
+            --text-tertiary: var(--text-tertiary-dark);
+            --accent-primary: var(--accent-primary-dark);
+            --accent-secondary: var(--accent-secondary-dark);
+            --color-success: var(--color-success-dark);
+            --color-warning: var(--color-warning-dark);
+            --color-error: var(--color-error-dark);
+            --border-color: var(--border-color-dark);
+            --border-highlight: var(--border-highlight-dark);
+            --placeholder-color: var(--placeholder-color-dark);
+            --shadow-color: var(--shadow-color-dark);
+            --button-primary-text: var(--button-primary-text-dark);
+            --progress-bg: var(--progress-bg-dark);
+            --amount-positive: var(--amount-positive-dark);
+            --amount-negative: var(--amount-negative-dark);
+
+             /* General Settings */
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --border-radius: 8px;
+            --transition-speed: 0.3s;
+            --fast-transition-speed: 0.15s;
+        }
+
+         /* Apply Light Mode Mappings */
+        :root[data-theme="light"] {
+            --bg-primary: var(--bg-primary-light);
+            --bg-secondary: var(--bg-secondary-light);
+            --bg-tertiary: var(--bg-tertiary-light);
+            --text-primary: var(--text-primary-light);
+            --text-secondary: var(--text-secondary-light);
+            --text-tertiary: var(--text-tertiary-light);
+            --accent-primary: var(--accent-primary-light);
+            --accent-secondary: var(--accent-secondary-light);
+            --color-success: var(--color-success-light);
+            --color-warning: var(--color-warning-light);
+            --color-error: var(--color-error-light);
+            --border-color: var(--border-color-light);
+            --border-highlight: var(--border-highlight-light);
+            --placeholder-color: var(--placeholder-color-light);
+            --shadow-color: var(--shadow-color-light);
+            --button-primary-text: var(--button-primary-text-light);
+            --progress-bg: var(--progress-bg-light);
+            --amount-positive: var(--amount-positive-light);
+            --amount-negative: var(--amount-negative-light);
+        }
+
+
+        /* --- Base & Reset --- */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html {
+             font-size: 16px; scroll-behavior: smooth;
+             color-scheme: dark light; /* Indicate supported schemes */
+             transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease; /* Smooth theme transition */
+        }
+        body {
+            font-family: var(--font-family); background-color: var(--bg-primary); color: var(--text-primary);
+            line-height: 1.6; min-height: 100vh; display: flex; justify-content: center;
+            align-items: flex-start; padding: 2rem 1rem;
+            transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
+        }
+
+        /* --- Layout --- */
+        .dashboard-container { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 2rem; }
+        header { text-align: center; margin-bottom: 0.5rem; }
+        header h1 { font-size: 2rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem; }
+        header p { color: var(--text-secondary); font-size: 1rem; }
+
+        /* --- Controls Bar --- */
+        .controls-bar { padding: 0.5rem 0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; }
+        .control-group { display: flex; gap: 0.75rem; margin-left: auto; align-items: center;}
+
+        /* --- Month Selector --- */
+        .month-selector label { font-size: 0.9rem; color: var(--text-secondary); margin-right: 0.5rem;}
+        .month-selector select {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 0.8rem;
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: border-color var(--transition-speed), background-color var(--transition-speed);
+            min-width: 150px; /* Ensure decent width */
+        }
+        .month-selector select:hover { border-color: var(--text-tertiary); }
+        .month-selector select:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 2px var(--shadow-color); }
+
+        /* --- Theme Switcher (Copied from original) --- */
+        .theme-switch-wrapper { display: flex; align-items: center; gap: 0.5rem; }
+        .theme-switch { display: inline-block; height: 22px; position: relative; width: 44px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: var(--bg-tertiary); bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: var(--transition-speed); border-radius: 22px; border: 1px solid var(--border-color); }
+        .slider:before { background-color: var(--text-secondary); bottom: 2px; content: ""; height: 16px; left: 3px; position: absolute; transition: var(--transition-speed); width: 16px; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-secondary); }
+        input:checked + .slider:before { transform: translateX(22px); background-color: var(--bg-secondary); }
+        .theme-switch-wrapper .icon { stroke: var(--text-tertiary); width: 18px; height: 18px; }
+
+
+        /* --- Buttons (Using Theme Vars - Add Expense Button) --- */
+        .primary-button, .secondary-button {
+            border: none; padding: 0.7rem 1.5rem; font-size: 1rem; font-weight: 600; border-radius: var(--border-radius);
+            cursor: pointer; display: inline-flex; align-items: center; gap: 0.6rem;
+            transition: all var(--transition-speed) ease; white-space: nowrap;
+        }
+        .primary-button {
+            background: linear-gradient(45deg, var(--accent-secondary), var(--accent-primary));
+            color: var(--button-primary-text); /* Use theme variable */
+            box-shadow: 0 4px 15px var(--shadow-color); /* Use theme variable */
+        }
+        .primary-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px var(--shadow-color); filter: brightness(1.1); }
+        .primary-button:active:not(:disabled) { transform: translateY(0); box-shadow: 0 2px 10px var(--shadow-color); }
+        .primary-button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .secondary-button { background-color: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); padding: 0.6rem 1.2rem; font-size: 0.9rem; }
+        .secondary-button:hover { background-color: var(--bg-secondary); border-color: var(--text-tertiary); color: var(--text-primary); }
+        .secondary-button:active { background-color: var(--bg-tertiary); transform: translateY(1px); }
+        .primary-button .icon, .secondary-button .icon { width: 18px; height: 18px; }
+
+
+        /* --- Metrics Section (Using Theme Vars) --- */
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+        .metric-card {
+            background-color: var(--bg-secondary); padding: 1.5rem; border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            display: flex; flex-direction: column; gap: 0.5rem;
+            transition: background-color var(--transition-speed) ease, border-color var(--fast-transition-speed) ease;
+            overflow: hidden; /* Prevent content overflow */
+        }
+        .metric-card:hover { background-color: var(--bg-tertiary); }
+        .metric-budget-negative { border-color: var(--color-error) !important; }
+        .metric-budget-positive { border-color: var(--color-success) !important; }
+
+        .metric-header { display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .metric-header .icon { width: 18px; height: 18px; stroke: var(--text-tertiary); }
+        .metric-value { font-size: 2.25rem; font-weight: 600; color: var(--text-primary); line-height: 1.2; transition: color var(--fast-transition-speed) ease-out; }
+        .metric-value.placeholder { color: var(--placeholder-color); font-size: 2rem; }
+        .metric-value.positive { color: var(--amount-positive); }
+        .metric-value.negative { color: var(--amount-negative); }
+
+        .metric-subtext { font-size: 0.85rem; color: var(--text-tertiary); }
+
+        /* --- Lower Section (Data Details) --- */
+        .data-details { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .data-column { background-color: var(--bg-secondary); border-radius: var(--border-radius); padding: 1.5rem; display: flex; flex-direction: column; min-height: 350px; max-height: 450px; border: 1px solid var(--border-color); }
+        .data-column h2 { font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+        .data-column h2 .icon { width: 18px; height: 18px; stroke: var(--text-secondary); }
+
+        /* --- List Styling (Transactions & Categories) --- */
+        .item-list { list-style: none; flex-grow: 1; overflow-y: auto; padding-right: 0.5rem; margin-top: 0.5rem;}
+        .item-list::-webkit-scrollbar { width: 6px; }
+        .item-list::-webkit-scrollbar-track { background: var(--bg-tertiary); border-radius: 3px; }
+        .item-list::-webkit-scrollbar-thumb { background-color: var(--text-tertiary); border-radius: 3px; }
+        .item-list::-webkit-scrollbar-thumb:hover { background-color: var(--text-secondary); }
+        .item-list li { padding: 0.85rem 0.25rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 1rem; font-size: 0.9rem; color: var(--text-primary); }
+        .item-list li:last-child { border-bottom: none; }
+        .item-list .icon { width: 20px; height: 20px; flex-shrink: 0; stroke-width: 2; color: var(--text-tertiary); /* Default icon color */ }
+
+        /* Transaction Specific */
+        .transaction-details { flex-grow: 1; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+        .transaction-info { display: flex; flex-direction: column; }
+        .transaction-description { font-weight: 500; }
+        .transaction-category { font-size: 0.8em; color: var(--text-secondary); }
+        .transaction-amount { font-weight: 600; white-space: nowrap; color: var(--amount-negative); /* Default to negative */ }
+        .transaction-date { font-size: 0.8em; color: var(--text-tertiary); margin-left: auto; align-self: flex-start; white-space: nowrap; padding-left: 1rem;}
+
+
+        /* Category Specific */
+        .category-details { flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; }
+        .category-header { display: flex; justify-content: space-between; align-items: baseline; }
+        .category-name { font-weight: 500; }
+        .category-amount { font-size: 0.95em; font-weight: 500; color: var(--text-primary); white-space: nowrap; }
+        .category-percentage { font-size: 0.8em; color: var(--text-secondary); }
+        .category-progress-bar {
+            height: 6px;
+            background-color: var(--progress-bg);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 0.3rem;
+        }
+        .category-progress {
+            height: 100%;
+            background-color: var(--accent-primary);
+            border-radius: 3px;
+            width: 0%; /* Set by JS */
+            transition: width var(--transition-speed) ease;
+        }
+         /* Assign colors to icons based on category (optional but nice) */
+        .icon-food { color: #f59e0b; } /* Warning color */
+        .icon-transport { color: #3b82f6; } /* Blue */
+        .icon-shopping { color: #a855f7; } /* Purple */
+        .icon-utilities { color: #10b981; } /* Emerald */
+        .icon-entertainment { color: #ec4899; } /* Pink */
+        .icon-housing { color: #ef4444; } /* Red */
+        .icon-other { color: var(--text-tertiary); }
+
+        /* Empty State */
+        .empty-list-message {
+             color: var(--text-tertiary);
+             text-align: center;
+             padding: 2rem;
+             font-style: italic;
+        }
+
+        /* --- Responsiveness --- */
+        @media (max-width: 992px) { .data-details { grid-template-columns: 1fr; } .data-column { min-height: 300px; max-height: 350px; } }
+        @media (max-width: 768px) {
+            body { padding: 1rem 0.5rem; }
+            .controls-bar { flex-direction: column; align-items: stretch; gap: 1.5rem; }
+            .month-selector { display: flex; justify-content: space-between; align-items: center; }
+            .month-selector label { margin-right: 0;} /* Remove margin */
+            .month-selector select { flex-grow: 1; margin-left: 1rem; } /* Make select take space */
+            .control-group { margin-left: 0; width: 100%; justify-content: space-between; }
+             header h1 { font-size: 1.75rem; }
+             .metrics { grid-template-columns: 1fr 1fr; gap: 1rem; }
+             .metric-card { padding: 1rem; }
+             .metric-value { font-size: 1.75rem; }
+             .metric-value.placeholder { font-size: 1.5rem; }
+        }
+        @media (max-width: 576px) {
+            html { font-size: 15px; }
+            header h1 { font-size: 1.5rem; }
+            .control-group { flex-direction: column; gap: 1rem; align-items: flex-end;}
+            .primary-button { width: auto; /* Fit content */ }
+            .theme-switch-wrapper { margin-top: 0.5rem; align-self: flex-end;}
+            .metrics { grid-template-columns: 1fr; }
+            .metric-value { font-size: 2rem; }
+            .metric-value.placeholder { font-size: 1.75rem; }
+            .data-details { gap: 1rem; }
+            .data-column { padding: 1rem; min-height: 250px; max-height: 300px; }
+            .data-column h2 { font-size: 1.1rem; padding-bottom: 0.5rem; margin-bottom: 0.75rem; }
+            .item-list li { padding: 0.7rem 0.1rem; font-size: 0.85rem; gap: 0.75rem; }
+            .transaction-details { flex-wrap: wrap; } /* Allow wrapping */
+            .transaction-date { margin-left: 0; align-self: center; padding-left: 0; width: 100%; text-align: right; font-size: 0.75em; padding-top: 0.2em;}
+        }
+    </style>
+
+</head>
+<body>
+
+<div class="dashboard-container">
+    <header>
+        <h1>Expense Tracker</h1>
+        <p>Monitor your monthly spending habits</p>
+    </header>
+
+    <section class="controls-bar">
+         <div class="month-selector">
+            <label for="month-select">Select Month:</label>
+            <select id="month-select">
+                <!-- Options will be populated by JS -->
+            </select>
+         </div>
+        <div class="control-group">
+            <!-- Theme Switcher -->
+             <div class="theme-switch-wrapper">
+                 <i data-feather="sun" class="icon"></i>
+                 <label class="theme-switch" for="theme-checkbox">
+                     <input type="checkbox" id="theme-checkbox" />
+                     <div class="slider"></div>
+                 </label>
+                 <i data-feather="moon" class="icon"></i>
+             </div>
+             <!-- End Theme Switcher -->
+            <button class="primary-button" id="addExpenseButton">
+                <i data-feather="plus" class="icon"></i>
+                <span>Add Expense</span>
+            </button>
+        </div>
+    </section>
+
+    <section class="metrics" id="metrics-section">
+        <!-- Metric Cards - Populated by JS -->
+        <div class="metric-card">
+            <div class="metric-header"> <span>Total Spent</span> <i data-feather="dollar-sign" class="icon"></i> </div>
+            <div class="metric-value" id="metric-total-spent">$0.00</div>
+            <div class="metric-subtext" id="metric-total-spent-sub">This month</div>
+        </div>
+        <div class="metric-card" id="metric-budget-card">
+            <div class="metric-header"> <span>Budget Status</span> <i data-feather="target" class="icon"></i> </div>
+            <div class="metric-value" id="metric-budget-remaining">$0.00</div>
+            <div class="metric-subtext" id="metric-budget-sub">Remaining / Overspent</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-header"> <span>Top Category</span> <i data-feather="trending-up" class="icon"></i> </div>
+            <div class="metric-value" id="metric-top-category">--</div>
+            <div class="metric-subtext" id="metric-top-category-sub">Highest spending</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-header"> <span>Transactions</span> <i data-feather="list" class="icon"></i> </div>
+            <div class="metric-value" id="metric-total-transactions">0</div>
+            <div class="metric-subtext" id="metric-total-transactions-sub">This month</div>
+        </div>
+    </section>
+
+    <section class="data-details">
+        <div class="data-column transactions-column">
+             <h2><i data-feather="repeat" class="icon"></i>Recent Transactions</h2>
+            <ul class="item-list" id="transactions-list">
+                <!-- Transactions Populated by JS -->
+                 <li class="empty-list-message">No transactions for this period.</li>
+            </ul>
+        </div>
+        <div class="data-column categories-column">
+             <h2><i data-feather="pie-chart" class="icon"></i>Spending by Category</h2>
+            <ul class="item-list" id="categories-list">
+                 <!-- Categories Populated by JS -->
+                 <li class="empty-list-message">No spending data available.</li>
+            </ul>
+        </div>
+    </section>
+</div>
+
+<script>
+    // --- Feather Icons Init ---
+    feather.replace();
+
+    // --- DOM Elements ---
+    const themeCheckbox = document.getElementById('theme-checkbox');
+    const htmlElement = document.documentElement;
+    const monthSelect = document.getElementById('month-select');
+    const addExpenseButton = document.getElementById('addExpenseButton');
+
+    // Metric Elements
+    const metricTotalSpent = document.getElementById('metric-total-spent');
+    const metricBudgetRemaining = document.getElementById('metric-budget-remaining');
+    const metricBudgetCard = document.getElementById('metric-budget-card');
+    const metricBudgetSub = document.getElementById('metric-budget-sub');
+    const metricTopCategory = document.getElementById('metric-top-category');
+    const metricTopCategorySub = document.getElementById('metric-top-category-sub');
+    const metricTotalTransactions = document.getElementById('metric-total-transactions');
+
+    // List Elements
+    const transactionsList = document.getElementById('transactions-list');
+    const categoriesList = document.getElementById('categories-list');
+
+    // --- Theme Switcher Logic (Copied) ---
+    const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+    if (currentTheme) {
+        htmlElement.setAttribute('data-theme', currentTheme);
+        if (currentTheme === 'light') themeCheckbox.checked = true;
+    } else {
+         htmlElement.setAttribute('data-theme', 'dark'); // Default dark
+    }
+    themeCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            htmlElement.setAttribute('data-theme', 'light');
+            localStorage.setItem('theme', 'light');
+        } else {
+            htmlElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+        }
+         feather.replace(); // Re-render icons if colors change
+    });
+
+    // --- Demo Data ---
+    const monthlyBudget = 1500; // Example fixed budget
+
+    const demoData = {
+        "2024-07": {
+            transactions: [
+                { id: 1, date: "2024-07-28", description: "Groceries", category: "Food", amount: 75.50, icon: "shopping-cart" },
+                { id: 2, date: "2024-07-27", description: "Coffee Shop", category: "Food", amount: 5.25, icon: "coffee" },
+                { id: 3, date: "2024-07-26", description: "Gasoline", category: "Transport", amount: 55.10, icon: "truck" },
+                { id: 4, date: "2024-07-25", description: "Movie Tickets", category: "Entertainment", amount: 32.00, icon: "film" },
+                { id: 5, date: "2024-07-22", description: "Restaurant Dinner", category: "Food", amount: 112.80, icon: "shopping-bag" },
+                { id: 6, date: "2024-07-20", description: "Electricity Bill", category: "Utilities", amount: 88.40, icon: "zap" },
+                { id: 7, date: "2024-07-15", description: "New T-shirt", category: "Shopping", amount: 29.99, icon: "tag" },
+                { id: 8, date: "2024-07-10", description: "Bus Fare", category: "Transport", amount: 4.50, icon: "navigation" },
+                { id: 9, date: "2024-07-05", description: "Rent", category: "Housing", amount: 850.00, icon: "home" },
+                { id: 10, date: "2024-07-02", description: "Pharmacy", category: "Other", amount: 15.75, icon: "thermometer" },
+            ]
+        },
+        "2024-06": {
+            transactions: [
+                { id: 11, date: "2024-06-25", description: "Lunch Meeting", category: "Food", amount: 45.00, icon: "shopping-bag" },
+                { id: 12, date: "2024-06-22", description: "Streaming Service", category: "Entertainment", amount: 14.99, icon: "tv" },
+                { id: 13, date: "2024-06-18", description: "Train Ticket", category: "Transport", amount: 88.00, icon: "train" },
+                { id: 14, date: "2024-06-15", description: "Bookstore", category: "Shopping", amount: 35.50, icon: "book-open" },
+                { id: 15, date: "2024-06-10", description: "Internet Bill", category: "Utilities", amount: 65.00, icon: "wifi" },
+                { id: 16, date: "2024-06-05", description: "Rent", category: "Housing", amount: 850.00, icon: "home" },
+                 { id: 17, date: "2024-06-02", description: "Takeaway Pizza", category: "Food", amount: 28.00, icon: "gift"},
+            ]
+        },
+         "2024-05": {
+            transactions: [ // Fewer transactions for variety
+                 { id: 18, date: "2024-05-20", description: "Hardware Store", category: "Other", amount: 42.10, icon: "tool" },
+                 { id: 19, date: "2024-05-15", description: "Concert Tickets", category: "Entertainment", amount: 150.00, icon: "music" },
+                 { id: 20, date: "2024-05-05", description: "Rent", category: "Housing", amount: 850.00, icon: "home" },
+                 { id: 21, date: "2024-05-01", description: "Big Grocery Run", category: "Food", amount: 180.35, icon: "shopping-cart"},
+            ]
+         },
+         "2024-04": {
+            transactions: [] // Example of an empty month
+         }
+    };
+
+    // --- Helper Functions ---
+    function formatCurrency(amount) {
+        return `$${amount.toFixed(2)}`;
+    }
+
+    function getCategoryIconClass(category) {
+        switch (category.toLowerCase()) {
+            case 'food': return 'icon-food';
+            case 'transport': return 'icon-transport';
+            case 'shopping': return 'icon-shopping';
+            case 'utilities': return 'icon-utilities';
+            case 'entertainment': return 'icon-entertainment';
+            case 'housing': return 'icon-housing';
+            default: return 'icon-other';
+        }
+    }
+
+    // --- Rendering Functions ---
+    function renderTransactions(transactions) {
+        transactionsList.innerHTML = ''; // Clear existing list
+
+        if (!transactions || transactions.length === 0) {
+             transactionsList.innerHTML = '<li class="empty-list-message">No transactions for this period.</li>';
+             return;
+        }
+
+        // Sort by date descending before rendering
+        transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        transactions.forEach(tx => {
+            const li = document.createElement('li');
+            const categoryIconClass = getCategoryIconClass(tx.category);
+            const shortDate = new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+            li.innerHTML = `
+                <i data-feather="${tx.icon || 'dollar-sign'}" class="icon ${categoryIconClass}"></i>
+                <div class="transaction-details">
+                    <div class="transaction-info">
+                        <span class="transaction-description">${tx.description}</span>
+                        <span class="transaction-category">${tx.category}</span>
+                    </div>
+                    <span class="transaction-amount">${formatCurrency(tx.amount)}</span>
+                </div>
+                 <span class="transaction-date">${shortDate}</span>
+            `;
+            transactionsList.appendChild(li);
+        });
+        feather.replace(); // Update icons
+    }
+
+    function renderCategories(transactions, totalSpent) {
+         categoriesList.innerHTML = ''; // Clear existing list
+
+         if (!transactions || transactions.length === 0 || totalSpent <= 0) {
+             categoriesList.innerHTML = '<li class="empty-list-message">No spending data available.</li>';
+             return;
+         }
+
+         const spendingByCategory = transactions.reduce((acc, tx) => {
+             acc[tx.category] = (acc[tx.category] || 0) + tx.amount;
+             return acc;
+         }, {});
+
+         const sortedCategories = Object.entries(spendingByCategory)
+            .sort(([, amountA], [, amountB]) => amountB - amountA); // Sort descending by amount
+
+        sortedCategories.forEach(([category, amount]) => {
+             const li = document.createElement('li');
+             const percentage = totalSpent > 0 ? ((amount / totalSpent) * 100).toFixed(1) : 0;
+             const iconName = transactions.find(tx => tx.category === category)?.icon || 'tag'; // Find an icon from transactions in that category
+             const categoryIconClass = getCategoryIconClass(category);
+
+             li.innerHTML = `
+                <i data-feather="${iconName}" class="icon ${categoryIconClass}"></i>
+                <div class="category-details">
+                    <div class="category-header">
+                         <span class="category-name">${category}</span>
+                         <span class="category-amount">${formatCurrency(amount)}</span>
+                    </div>
+                     <div class="category-progress-bar">
+                        <div class="category-progress" style="width: ${percentage}%;"></div>
+                     </div>
+                     <span class="category-percentage">${percentage}% of total</span>
+                 </div>
+             `;
+             categoriesList.appendChild(li);
+         });
+         feather.replace();
+    }
+
+    function updateDashboard(monthKey) {
+        const data = demoData[monthKey] || { transactions: [] }; // Handle missing month data
+        const transactions = data.transactions;
+
+        // 1. Calculate Metrics
+        const totalSpent = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+        const budgetRemaining = monthlyBudget - totalSpent;
+        const totalTransactions = transactions.length;
+
+        const spendingByCategory = transactions.reduce((acc, tx) => {
+             acc[tx.category] = (acc[tx.category] || 0) + tx.amount;
+             return acc;
+         }, {});
+        const topCategoryEntry = Object.entries(spendingByCategory).sort((a, b) => b[1] - a[1])[0];
+        const topCategoryName = topCategoryEntry ? topCategoryEntry[0] : '--';
+        const topCategoryAmount = topCategoryEntry ? topCategoryEntry[1] : 0;
+
+        // 2. Update Metric Elements
+        metricTotalSpent.textContent = formatCurrency(totalSpent);
+        metricTotalTransactions.textContent = totalTransactions;
+
+        metricBudgetRemaining.textContent = formatCurrency(Math.abs(budgetRemaining));
+        metricBudgetCard.classList.remove('metric-budget-positive', 'metric-budget-negative');
+        metricBudgetRemaining.classList.remove('positive', 'negative');
+        if (budgetRemaining >= 0) {
+             metricBudgetRemaining.classList.add('positive');
+             metricBudgetCard.classList.add('metric-budget-positive');
+             metricBudgetSub.textContent = "Remaining";
+        } else {
+             metricBudgetRemaining.classList.add('negative');
+             metricBudgetCard.classList.add('metric-budget-negative');
+             metricBudgetSub.textContent = "Overspent";
+        }
+
+        metricTopCategory.textContent = topCategoryName;
+        metricTopCategorySub.textContent = topCategoryName !== '--' ? `${formatCurrency(topCategoryAmount)} spent` : 'No spending yet';
+
+
+        // 3. Render Lists
+        renderTransactions(transactions);
+        renderCategories(transactions, totalSpent);
+    }
+
+    // --- Initialization ---
+    function initialize() {
+        // Populate month selector
+        const months = Object.keys(demoData).sort().reverse(); // Show newest first
+        const currentMonthYear = new Date().toISOString().slice(0, 7); // YYYY-MM
+
+        months.forEach(monthKey => {
+            const option = document.createElement('option');
+            option.value = monthKey;
+            // Format for display (e.g., "July 2024")
+            const [year, month] = monthKey.split('-');
+            const date = new Date(year, month - 1); // Month is 0-indexed
+            option.textContent = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+            monthSelect.appendChild(option);
+        });
+
+        // Select current or most recent month by default
+        if (months.includes(currentMonthYear)) {
+            monthSelect.value = currentMonthYear;
+        } else if (months.length > 0) {
+            monthSelect.value = months[0]; // Select the latest available if current isn't present
+        }
+
+        // Initial dashboard load
+        updateDashboard(monthSelect.value);
+
+        // Add Event Listeners
+        monthSelect.addEventListener('change', (e) => {
+            updateDashboard(e.target.value);
+        });
+
+        addExpenseButton.addEventListener('click', () => {
+            alert('Add Expense - This would open a form/modal (not implemented in demo).');
+        });
+    }
+
+    // --- Run Initialization ---
+    initialize();
+
+</script>
+</body>
+</html>

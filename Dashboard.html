@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Added DataLabels Plugin CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <style>
+        /* --- Configuration (Focused Nocturne Style) --- */
+        :root {
+            --bg-base: #16191d; --bg-surface: #1e2228; --bg-card: #252A30; --text-primary: #e8e8e8; --text-secondary: #a8b2c0; --text-tertiary: #6f7b8e; --accent: #00BFA6; --border-color: #30363e; --grid-line-color: rgba(76, 86, 100, 0.5); --shadow-color: transparent;
+            --c1: #5B8FF9; --c2: #61DDAA; --c3: #F6BD16; --c4: #65789B; --c5: #E8684A; --c6: #9270CA; --c7: #FF9D4D; --c8: #269A99; --c9: #FF99C3; --c10: #A8B2C0;
+            --font-family: 'Inter', sans-serif; --sidebar-width: 240px; --header-height: 65px; --content-padding: 35px; --card-padding: 25px; --card-radius: 8px; --history-bar-opacity: 0.45;
+        }
+
+        /* --- Base, Layout, Sidebar --- */
+         * { box-sizing: border-box; margin: 0; padding: 0; } html, body { height: 100%; overflow: hidden; } body { font-family: var(--font-family); background-color: var(--bg-base); color: var(--text-primary); line-height: 1.6; font-size: 14px; display: flex; } button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; } ul { list-style: none; } a { color: inherit; text-decoration: none; } svg.feather { width: 18px; height: 18px; stroke-width: 2; vertical-align: middle; margin-right: 10px; color: var(--text-secondary); }
+         .sidebar { width: var(--sidebar-width); background-color: var(--bg-surface); padding: 30px 20px; flex-shrink: 0; display: flex; flex-direction: column; height: 100vh; border-right: 1px solid var(--border-color); } .main-area { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; } .main-content-wrapper { flex-grow: 1; overflow-y: auto; padding: var(--content-padding); display: flex; flex-direction: column; gap: var(--content-padding); }
+         .sidebar-brand { font-size: 1.3rem; font-weight: 700; margin-bottom: 35px; padding: 0 5px; color: var(--text-primary); } .sidebar-nav ul { display: flex; flex-direction: column; gap: 8px; } .sidebar-nav a { display: flex; align-items: center; padding: 12px 15px; border-radius: 6px; font-weight: 500; font-size: 0.95rem; color: var(--text-secondary); transition: background-color 0.2s ease, color 0.2s ease, border-left 0.2s ease; position: relative; border-left: 3px solid transparent; } .sidebar-nav a:hover { background-color: var(--bg-card); color: var(--text-primary); } .sidebar-nav a.active { background-color: rgba(0, 191, 166, 0.1); color: var(--accent); font-weight: 600; border-left: 3px solid var(--accent); } .sidebar-nav a.active svg { color: var(--accent); }
+         .coming-soon-badge { font-size: 0.6rem; font-weight: 500; background-color: var(--text-tertiary); color: var(--bg-surface); padding: 1px 5px; border-radius: 3px; margin-left: auto; line-height: 1.1; text-transform: uppercase; letter-spacing: 0.4px; } .sidebar-nav a:hover .coming-soon-badge { background-color: var(--text-secondary); color: var(--bg-base); }
+
+        /* --- Controls, Core Layout --- */
+         .main-content-header-controls { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; } .month-navigator { display: flex; align-items: center; gap: 12px; } .month-navigator button { font-size: 1.3rem; color: var(--text-secondary); transition: all 0.2s ease; line-height: 1; padding: 6px; border-radius: 6px; } .month-navigator button:hover:not(:disabled) { color: var(--text-primary); background-color: var(--bg-card); } .month-navigator button:disabled { color: var(--text-tertiary); cursor: not-allowed; background-color: transparent; } .current-month { font-size: 1.3rem; font-weight: 600; color: var(--text-primary); min-width: 220px; /* Increased width for cycle display */ text-align: center; } .total-spend { text-align: right; } .total-spend-label { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.6px;} .total-spend-amount { font-size: 1.7rem; font-weight: 700; color: var(--accent); line-height: 1.2; }
+         .dashboard-core { display: grid; grid-template-columns: 3fr 2fr; gap: var(--content-padding); flex-grow: 1; min-height: 0; } .graph-container, .category-list-container { background-color: var(--bg-card); border-radius: var(--card-radius); padding: var(--card-padding); display: flex; flex-direction: column; box-shadow: none; border: 1px solid var(--border-color); overflow: hidden; }
+
+        /* --- Container Header & Back Button --- */
+        .container-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; } .container-title { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0; padding-bottom: 0; border-bottom: none; flex-grow: 1; margin-right: 10px;} .back-button-header { display: inline-flex; align-items: center; gap: 7px; background-color: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 7px 14px; cursor: pointer; transition: all 0.2s ease; font-size: 0.85rem; font-weight: 500; line-height: 1; flex-shrink: 0;} .back-button-header svg { width: 15px; height: 15px; margin-right: 0px; } .back-button-header:hover { border-color: var(--accent); color: var(--accent); background-color: rgba(0, 191, 166, 0.1); }
+
+        /* --- Chart, Category List --- */
+        .chart-wrapper {
+            flex-grow: 1;
+            position: relative;
+            min-height: 300px; /* Ensure chart has space */
+        }
+        #expense-chart {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #category-content { /* Container for category list OR details view */
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            min-height: 0; /* Important for nested flex scrolling */
+            overflow: hidden;
+        }
+        .category-list { /* The scrollable list in the main overview */
+            flex-grow: 1;
+            overflow-y: auto;
+            /* Adjust margin/padding to visually align with container padding if needed */
+            margin: 0 -5px 0 -5px;
+            padding: 0 5px 0 5px;
+        }
+
+        /* --- Category Item (using Icon) --- */
+        .category-item {
+            display: flex;
+            align-items: center; /* Align icon and text vertically */
+            padding: 12px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            position: relative; /* Needed for --inner-color variable */
+        }
+        .category-list .category-item + .category-item {
+             margin-top: 2px; /* Space between items */
+        }
+        .category-item:hover {
+             background-color: rgba(232, 232, 232, 0.05); /* Subtle hover effect */
+        }
+
+        /* --- Styling for Feather Icons in category list --- */
+        .category-item i[data-feather] {
+            color: var(--inner-color); /* Use the color variable from the parent li */
+            margin-right: 14px;     /* Spacing between icon and name */
+            flex-shrink: 0;         /* Prevent icon from shrinking */
+            /* Size and stroke are set via feather.replace() in JS for consistency */
+            vertical-align: middle; /* Adjust vertical alignment if needed */
+        }
+
+        .category-name {
+            font-weight: 500;
+            color: var(--text-primary);
+            flex-grow: 1;           /* Take available space */
+            margin-right: 15px;     /* Space before amount */
+            font-size: 0.9rem;
+             /* Add ellipsis if needed for long names */
+             overflow: hidden;
+             white-space: nowrap;
+             text-overflow: ellipsis;
+        }
+        .category-amount {
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;    /* Prevent amount wrapping */
+            font-size: 0.9rem;
+            flex-shrink: 0; /* Prevent amount from shrinking */
+        }
+
+        /* --- Category Details Layout (Scrolling Fix) --- */
+        .category-details {
+            display: flex;           /* Make it a flex container */
+            flex-direction: column;  /* Stack children (scroll wrapper, total row) vertically */
+            flex-grow: 1;            /* Allow it to fill the space given by #category-content */
+            min-height: 0;           /* CRUCIAL for allowing flex children to shrink and scroll */
+            overflow: hidden;        /* Hide any potential overflow from this container itself */
+        }
+        .transactions-scroll-wrapper {
+            flex-grow: 1;            /* Allow the list to take up available vertical space */
+            overflow-y: auto;        /* Enable vertical scrolling ONLY when needed */
+             /* Add minor padding to keep scrollbar from overlapping content */
+             padding-right: 5px;
+             /* margin-right: -5px; */ /* Adjust if needed */
+        }
+        /* Ensure the total row doesn't shrink */
+        .details-total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 5px; /* Keep padding */
+            border-top: 1px solid var(--border-color); /* Keep border */
+            font-weight: 600;
+            font-size: 1.0rem;
+            flex-shrink: 0; /* IMPORTANT: Prevent this row from shrinking */
+        }
+        /* --- End Category Details Layout --- */
+
+
+        /* --- Transaction List Item Styles (Single Line) --- */
+        .transaction-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;    /* Align text baselines */
+            padding: 8px 5px;         /* Adjust vertical padding if needed */
+            border-bottom: 1px solid var(--border-color);
+            line-height: 1.5;         /* Adjust line height if needed */
+            overflow: hidden;         /* Prevent content spill */
+        }
+        .transaction-list-item:last-child { border-bottom: none; }
+
+        /* Container for Date, Description, Location */
+        .transaction-left-col {
+            display: flex;            /* Arrange items in a row */
+            align-items: baseline;    /* Align text baselines */
+            flex-grow: 1;             /* Allow this column to take available space */
+            margin-right: 15px;       /* Space before amount */
+            overflow: hidden;         /* Hide overflow within this column */
+            gap: 8px;                 /* Space between Date, Desc, Location */
+        }
+
+        .transaction-date-short {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            flex-shrink: 0;           /* Don't let date shrink */
+            white-space: nowrap;      /* Prevent date wrapping */
+            min-width: 50px;          /* Ensure minimum space for date */
+        }
+
+        .transaction-description-short {
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            overflow: hidden;         /* Required for ellipsis */
+            white-space: nowrap;      /* Required for ellipsis */
+            text-overflow: ellipsis;  /* Add ... if too long */
+            /* Use originalDescription in title if available */
+        }
+
+        .transaction-location-inline {
+            font-size: 0.75rem;       /* Smaller font size */
+            color: var(--text-secondary); /* Dimmer color */
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            flex-shrink: 1;           /* Allow location to shrink if space is needed */
+        }
+
+        .transaction-amount-short {
+            color: var(--text-primary);
+            font-weight: 500;
+            white-space: nowrap;
+            flex-shrink: 0;           /* Don't let amount shrink */
+            text-align: right;
+            font-size: 0.85rem;
+        }
+        /* --- End Transaction Item Styles --- */
+
+        .no-expenses-message { color: var(--text-secondary); font-style: italic; margin-top: 20px; text-align: center; font-size: 0.9rem; padding: 20px; }
+
+        /* --- Scrollbar, Tooltip --- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #444c58; border-radius: 4px; border: 2px solid var(--bg-card); } ::-webkit-scrollbar-thumb:hover { background: #555e6d; }
+        div.chartjs-tooltip { background: var(--bg-base); border-radius: 6px; color: var(--text-primary); opacity: 1; pointer-events: none; position: absolute; transform: translate(-50%, -115%); transition: all .1s ease; padding: 10px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.35); border: 1px solid var(--border-color); font-family: var(--font-family); font-size: 13px; z-index: 10; min-width: 120px; } div.chartjs-tooltip table { margin: 0px; width: 100%; } div.chartjs-tooltip th { font-weight: 600; padding-bottom: 6px; text-align: left; border-bottom: 1px solid var(--border-color); margin-bottom: 6px; display: block; color: var(--text-primary);} div.chartjs-tooltip td { border-width: 0; padding: 3px 0; display: flex; align-items: center; color: var(--text-primary);} div.chartjs-tooltip span.tooltip-swatch { border-width: 0px; margin-right: 8px; height: 10px; width: 10px; border-radius: 3px; display: inline-block; }
+
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">Expense Tracker</div> <!-- Updated Name -->
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="#" class="active"><i data-feather="grid"></i>Dashboard</a></li>
+                <li><a href="#"><i data-feather="pie-chart"></i>Reports <span class="coming-soon-badge">Soon</span></a></li>
+                <li><a href="#"><i data-feather="list"></i>Transactions <span class="coming-soon-badge">Soon</span></a></li>
+                <li><a href="#"><i data-feather="target"></i>Budgets <span class="coming-soon-badge">Soon</span></a></li>
+                <li><a href="#"><i data-feather="settings"></i>Settings <span class="coming-soon-badge">Soon</span></a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Area -->
+    <main class="main-area">
+        <div class="main-content-wrapper">
+             <!-- Header Controls -->
+             <div class="main-content-header-controls">
+                 <div class="month-navigator">
+                     <button id="prev-month" title="Previous Period" disabled><i data-feather="chevron-left"></i></button>
+                     <div class="current-month" id="current-month-display">Loading...</div> <!-- Will show cycle e.g., Apr 22 - May 21, 2024 -->
+                     <button id="next-month" title="Next Period" disabled><i data-feather="chevron-right"></i></button>
+                 </div>
+                 <div class="total-spend">
+                     <div class="total-spend-label">Total Spent This Period</div> <!-- Changed from Month -->
+                     <div class="total-spend-amount" id="total-spend-amount">---</div>
+                 </div>
+             </div>
+             <!-- Dashboard Core -->
+            <div class="dashboard-core">
+                 <div class="graph-container">
+                    <div class="container-header" id="graph-header"> <h2 class="container-title" id="graph-title">Spending by Category</h2> <!-- Back button added dynamically --> </div>
+                    <div class="chart-wrapper"> <canvas id="expense-chart"></canvas> </div>
+                </div>
+                <div class="category-list-container">
+                    <div class="container-header" id="list-header"> <h2 class="container-title" id="category-list-title">Top Categories</h2> <!-- Back button added dynamically --> </div>
+                    <div id="category-content"> <p class="no-expenses-message">Loading data...</p> </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Feather Icons Initialization (run early)
+        feather.replace();
+
+        // Register DataLabels plugin with Chart.js
+        if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
+             Chart.register(ChartDataLabels);
+        } else {
+             console.error("Chart.js or ChartDataLabels not loaded before registration attempt.");
+        }
+
+        // --- DOM Elements ---
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+        const currentMonthDisplay = document.getElementById('current-month-display');
+        const categoryContent = document.getElementById('category-content'); // Parent for event delegation
+        const categoryListTitle = document.getElementById('category-list-title');
+        const totalSpendAmountEl = document.getElementById('total-spend-amount');
+        const graphTitleElement = document.getElementById('graph-title');
+        const listContainerHeader = document.getElementById('list-header');
+        const graphContainerHeader = document.getElementById('graph-header');
+        const chartWrapperElement = document.querySelector('.chart-wrapper');
+
+        // --- State ---
+        let expenseChart = null;
+        let currentViewMode = 'monthlyOverview'; // overview | categoryHistory
+        let selectedCategoryForHistory = null;
+        let dashboardData = {}; // Holds data returned from server { "cycleKey": { total, categories, details... } }
+        let monthKeys = []; // Will hold the cycle key strings (e.g., "2024-04-22_to_2024-05-21")
+        let currentMonthIndex = -1; // Index of the currently displayed cycle key in monthKeys
+
+        // --- Helpers, Chart Defaults ---
+        const getCssVarValue = (varName) => getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+        const formatCurrency = (amount) => {
+             const numAmount = Number(amount);
+             if (isNaN(numAmount)) return 'R --.--';
+             // Ensure ZAR formatting
+             return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numAmount);
+        };
+
+        /**
+         * Formats a cycle key (e.g., "2024-04-22_to_2024-05-21") into a user-friendly string.
+         * @param {string} cycleKey The cycle key string.
+         * @returns {string} Formatted string like "Apr 22 - May 21, 2024". Returns key if format is invalid.
+         */
+        function formatCycleKeyForDisplay(cycleKey) {
+            if (!cycleKey || typeof cycleKey !== 'string') return 'Invalid Key';
+            const parts = cycleKey.split('_to_');
+            if (parts.length !== 2) return cycleKey; // Return original if split fails
+
+            try {
+                const startDateStr = parts[0]; // "YYYY-MM-DD"
+                const endDateStr = parts[1];   // "YYYY-MM-DD"
+
+                // Create dates assuming UTC midnight to avoid timezone shifts during formatting
+                const startDate = new Date(startDateStr + 'T00:00:00Z');
+                const endDate = new Date(endDateStr + 'T00:00:00Z');
+
+                if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                     console.warn("Invalid date parsed in formatCycleKeyForDisplay:", cycleKey);
+                     return cycleKey; // Return original if dates are invalid
+                }
+
+                // Use toLocaleDateString for month name, ensures locale-awareness if needed later
+                const startMonth = startDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+                const startDay = startDate.getUTCDate();
+                const endMonth = endDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+                const endDay = endDate.getUTCDate();
+
+                // Determine the display year. Usually the year the period ends in.
+                const displayYear = endDate.getUTCFullYear();
+
+                // Handle edge case: cycle crosses year boundary (e.g., Dec 22 - Jan 21)
+                if (startDate.getUTCFullYear() !== endDate.getUTCFullYear()) {
+                    return `${startMonth} ${startDay}, ${startDate.getUTCFullYear()} - ${endMonth} ${endDay}, ${endDate.getUTCFullYear()}`;
+                } else {
+                    return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${displayYear}`;
+                }
+
+            } catch (e) {
+                console.error("Error formatting cycle key:", cycleKey, e);
+                return cycleKey; // Return original key on error
+            }
+        }
+
+
+        function setChartDefaults() {
+            try {
+                Chart.defaults.color = getCssVarValue('--text-secondary');
+                Chart.defaults.borderColor = getCssVarValue('--grid-line-color');
+                Chart.defaults.font.family = getCssVarValue('--font-family');
+                Chart.defaults.font.size = 12;
+                Chart.defaults.plugins.tooltip.enabled = false; // Use custom external tooltip + datalabels
+                Chart.defaults.plugins.datalabels.display = false; // Default to off, enable per chart
+            } catch (e) { console.error("Error setting Chart defaults:", e); }
+        }
+        const categoryColors = [ { inner: '--c1' }, { inner: '--c2' }, { inner: '--c3' }, { inner: '--c4' }, { inner: '--c5' }, { inner: '--c6' }, { inner: '--c7' }, { inner: '--c8' }, { inner: '--c9' }, { inner: '--c10' } ];
+        function hexToRGBA(hex, alpha) {
+             hex = hex.replace('#', '');
+             if (hex.length === 3) { hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2]; }
+             const r = parseInt(hex.substring(0, 2), 16);
+             const g = parseInt(hex.substring(2, 4), 16);
+             const b = parseInt(hex.substring(4, 6), 16);
+             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        // --- Icon Mapping ---
+        const categoryIconMap = {
+            'Groceries': 'shopping-cart', 'Rent': 'home', 'Uncategorised': 'tag', 'Fuel': 'truck', 'Takeaways': 'package', 'Restaurants': 'coffee', 'Licence': 'file-text', 'Sport & Hobbies': 'activity', 'Cellphone': 'smartphone', 'Donations': 'gift', 'Clothing & Shoes': 'shopping-bag', 'Other Transport': 'navigation', 'Tithing': 'gift', // Added Tithing example
+            'Default': 'tag' // Fallback icon
+        };
+        function getIconNameForCategory(categoryName) {
+            // Handle null or undefined categoryName gracefully
+            const lowerCaseName = categoryName?.toLowerCase() || 'default';
+            for (const key in categoryIconMap) {
+                // Make comparison case-insensitive
+                if (key.toLowerCase() === lowerCaseName) {
+                    return categoryIconMap[key];
+                }
+            }
+            // Return default if no match found or if categoryName was invalid
+            return categoryIconMap['Default'] || 'tag';
+        }
+        // --- End Icon Mapping ---
+
+        // --- Historical Data ---
+        /**
+         * Generates data for the historical category chart.
+         * Uses the new cycle keys (e.g., "2024-04-22_to_2024-05-21").
+         * Creates short labels for the chart axis (e.g., "Apr 22").
+         *
+         * @param {string} categoryName The category to fetch history for ("Other" is handled).
+         * @param {number} [numMonths=10] The number of past cycles to include.
+         * @returns {object} Chart.js data object { labels, datasets, fullKeys }.
+         */
+        function getHistoricalDataForCategory(categoryName, numMonths = 10) {
+             const historicalLabels = []; // Will hold short labels like "Apr 22"
+             const historicalAmounts = [];
+             const backgroundColors = [];
+             const fullMonthKeys = []; // Will hold full cycle keys like "2024-04-22_to_2024-05-21"
+             const historyOpacity = parseFloat(getCssVarValue('--history-bar-opacity')) || 0.45;
+
+             // Check if data is loaded and we have a valid index
+             if (!monthKeys.length || currentMonthIndex < 0 || !dashboardData) {
+                  console.warn("getHistoricalDataForCategory called before data ready or no monthKeys.");
+                  return { labels: [], datasets: [], fullKeys: [] };
+             }
+
+             // Find base color (improved logic for "Other")
+             let categoryIndexInCurrentMonth = -1;
+             const currentCycleKey = monthKeys[currentMonthIndex];
+             let currentCycleCategories = dashboardData[currentCycleKey]?.categories;
+
+             if (currentCycleCategories) {
+                 if (categoryName === "Other") {
+                     // Find index of "Other" if it exists, otherwise use last color index
+                     const otherIndex = currentCycleCategories.findIndex(c => c.name === "Other");
+                     categoryIndexInCurrentMonth = otherIndex !== -1 ? otherIndex : categoryColors.length - 1; // Fallback to last color index
+                 } else {
+                     categoryIndexInCurrentMonth = currentCycleCategories.findIndex(c => c.name === categoryName);
+                 }
+             }
+             // If still not found (e.g., category exists historically but not in current cycle's top N), use fallback
+             if (categoryIndexInCurrentMonth === -1) {
+                 categoryIndexInCurrentMonth = categoryColors.length - 1; // Use the 'Other' color index as fallback
+             }
+
+             // Ensure categoryIndexInCurrentMonth is within bounds of categoryColors
+             categoryIndexInCurrentMonth = categoryIndexInCurrentMonth % categoryColors.length;
+
+             const categoryBaseColorVar = categoryColors[categoryIndexInCurrentMonth]?.inner;
+             if (!categoryBaseColorVar) {
+                 console.error("Could not determine base color variable for category:", categoryName, "Index:", categoryIndexInCurrentMonth);
+                 return { labels: [], datasets: [], fullKeys: [] }; // Cannot proceed without color
+             }
+             const categoryBaseColorHex = getCssVarValue(categoryBaseColorVar);
+             if (!categoryBaseColorHex) {
+                console.error("Could not get CSS hex value for variable:", categoryBaseColorVar);
+                return { labels: [], datasets: [], fullKeys: [] }; // Cannot proceed without color
+             }
+
+
+             const startIndex = Math.max(0, currentMonthIndex - numMonths + 1);
+
+             // Use temporary arrays to build data in chronological order before reversing
+             let tempLabels = [], tempAmounts = [], tempColors = [], tempFullKeys = [];
+
+             for (let i = startIndex; i <= currentMonthIndex; i++) {
+                 const cycleKey = monthKeys[i]; // Get the raw cycle key (e.g., "2024-04-22_to_2024-05-21")
+                 const cycleData = dashboardData[cycleKey]; // Get data for this specific cycle
+
+                 // Skip if cycleData or essential details are missing
+                 if (!cycleData || !cycleData.details) {
+                      console.warn(`Skipping historical data for cycle key (no data): ${cycleKey}`);
+                      continue;
+                 }
+
+                 // --- Generate a shorter label for the chart axis from the cycle key ---
+                 try {
+                    const startDateStr = cycleKey.split('_to_')[0]; // Get "YYYY-MM-DD" part
+                    const startDate = new Date(startDateStr + 'T00:00:00Z'); // Treat as UTC
+                    if (isNaN(startDate.getTime())) throw new Error("Invalid start date parsed");
+
+                    const startMonthShort = startDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+                    const startDayShort = startDate.getUTCDate();
+                    tempLabels.push(`${startMonthShort} ${startDayShort}`); // e.g., "Apr 22"
+                 } catch (e) {
+                    console.error(`Error parsing start date from cycle key: ${cycleKey}`, e);
+                    // Fallback: Use a simple slice as a last resort
+                    tempLabels.push(cycleKey.substring(5, 10)); // "MM-DD" from start date
+                 }
+                 // --- End Label Generation ---
+
+                 tempFullKeys.push(cycleKey); // Store the full raw key for click handling
+
+                 // --- Calculate amount for the specific category in this historical cycle ---
+                 let categoryDataAmount = 0;
+                 if (categoryName === "Other") {
+                      // Calculate "Other" total for this historical cycle
+                      const displayedCatsHist = cycleData.categories || [];
+                      const topCatsHistNames = displayedCatsHist.map(c => c.name).filter(n => n !== "Other");
+                      const allDetailKeysHist = Object.keys(cycleData.details || {});
+                      const otherKeysHist = allDetailKeysHist.filter(k => !topCatsHistNames.includes(k));
+
+                      otherKeysHist.forEach(key => {
+                         // Sum amounts for transactions under this 'other' key
+                         categoryDataAmount += (cycleData.details[key] || []).reduce((sum, item) => {
+                             const amount = Number(item.amount);
+                             return sum + (isNaN(amount) ? 0 : amount);
+                          }, 0);
+                      });
+                 } else {
+                     // Get data for a specific category (non-"Other")
+                     categoryDataAmount = (cycleData.details[categoryName] || []).reduce((sum, item) => {
+                         const amount = Number(item.amount);
+                         return sum + (isNaN(amount) ? 0 : amount);
+                      }, 0);
+                 }
+                 // --- End Amount Calculation ---
+
+                 tempAmounts.push(categoryDataAmount);
+                 tempColors.push(hexToRGBA(categoryBaseColorHex, historyOpacity)); // Use consistent base color with opacity
+             } // End loop through historical cycles
+
+             // Reverse arrays for chart display (most recent cycle bar will be at the top/start of y-axis)
+             historicalLabels.push(...tempLabels.reverse());
+             historicalAmounts.push(...tempAmounts.reverse());
+             backgroundColors.push(...tempColors.reverse());
+             fullMonthKeys.push(...tempFullKeys.reverse());
+
+             // Ensure we have some data, even if it's all zeros, to avoid chart errors
+             if (historicalLabels.length === 0) {
+                 console.log("No historical data found for category:", categoryName);
+                 // Optionally return a placeholder structure or empty data
+                 // return { labels: [], datasets: [], fullKeys: [] };
+             }
+
+             return {
+                 labels: historicalLabels, // The short axis labels (e.g., "Apr 22")
+                 datasets: [{
+                     label: categoryName, // Keep category name as dataset label
+                     data: historicalAmounts,
+                     backgroundColor: backgroundColors.slice(), // Use processed colors
+                     borderWidth: 0,
+                     borderRadius: 4,
+                     // barPercentage/categoryPercentage set in createOrUpdateChart options
+                     originalColors: backgroundColors.slice(), // Store the non-highlighted colors
+                     highlightColor: categoryBaseColorHex // Store the solid base color for highlighting
+                 }],
+                 fullKeys: fullMonthKeys // The raw cycle keys for click handling
+             };
+         } // --- End of getHistoricalDataForCategory ---
+
+
+        // --- Chart ---
+        function handleChartClick(event, elements, chart) {
+            if (elements.length > 0 && currentViewMode === 'monthlyOverview') {
+                const elementIndex = elements[0].index;
+                const categoryName = chart.data.labels[elementIndex];
+                if (categoryName) {
+                    switchToCategoryDetailView(categoryName);
+                }
+            }
+         }
+        function createOrUpdateChart(chartDataInput, viewType = 'monthlyOverview') {
+             if (expenseChart) { expenseChart.destroy(); expenseChart = null; }
+             const existingMessage = chartWrapperElement.querySelector('.no-expenses-message');
+             if (existingMessage) { existingMessage.remove(); }
+             if (!chartWrapperElement.querySelector('#expense-chart')) {
+                 const canvas = document.createElement('canvas');
+                 canvas.id = 'expense-chart';
+                 chartWrapperElement.appendChild(canvas);
+             }
+             const ctx = chartWrapperElement.querySelector('#expense-chart')?.getContext('2d');
+             if (!ctx) { console.error("Canvas context not found."); return; }
+
+             const textColorPrimary = getCssVarValue('--text-primary');
+             const textColorSecondary = getCssVarValue('--text-secondary');
+             const gridColor = getCssVarValue('--grid-line-color');
+             let data, options;
+
+             // --- Common DataLabel Config ---
+             const commonDataLabelConfig = {
+                 display: true, // Enable datalabels for both chart types
+                 anchor: 'end',
+                 align: 'end',
+                 offset: 6,
+                 padding: 0,
+                 color: getCssVarValue('--text-secondary'),
+                 font: { size: 10, weight: 500 },
+                 formatter: (value, context) => {
+                     if (value === 0) return null; // Hide labels for zero values
+                     return formatCurrency(value);
+                 }
+             };
+             // --- End Common DataLabel Config ---
+
+             if (viewType === 'categoryHistory') {
+                 data = chartDataInput;
+                 const dataset = data.datasets && data.datasets[0] ? data.datasets[0] : { data: [0], label: 'History' };
+                 dataset.barPercentage = 0.8; // Consistency
+                 dataset.categoryPercentage = 0.8; // Consistency
+                 dataset.label = dataset.label || 'History';
+                 dataset.backgroundColor = dataset.backgroundColor || dataset.originalColors || [getCssVarValue('--accent')];
+                 dataset.borderWidth = dataset.borderWidth === undefined ? 0 : dataset.borderWidth;
+                 dataset.borderRadius = dataset.borderRadius === undefined ? 4 : dataset.borderRadius;
+
+                 const amounts = dataset.data || [0];
+                 const maxAmount = amounts.length > 0 ? Math.max(...amounts.filter(v => !isNaN(v))) : 100; // Ensure only numbers are considered
+
+                 options = {
+                     responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+                     scales: {
+                         x: { beginAtZero: true, suggestedMax: maxAmount * 1.22, // Increased for label space
+                             ticks: { color: textColorSecondary, font: { size: 11 }, padding: 8 },
+                             grid: { color: gridColor, drawTicks: false, borderDash: [3, 3] },
+                             border: { display: false },
+                             title: { display: true, text: 'Amount (R)', color: textColorSecondary, font: {size: 10, weight: '500'}, padding: {top: 10}}
+                         },
+                         y: { ticks: { color: textColorPrimary, font: { size: 12, weight: 500 }, padding: 10 }, grid: { display: false }, border: { display: false }, title: { display: false } } // Use short labels from data
+                     },
+                     plugins: {
+                         legend: { display: false },
+                         tooltip: { enabled: false, external: externalTooltipHandler }, // Use custom external tooltip
+                         datalabels: commonDataLabelConfig // Apply common datalabel config
+                     },
+                     layout: { padding: { top: 5, bottom: 5, left: 5, right: 15 } },
+                     onClick: handleHistoryChartClick
+                 };
+                 expenseChart = new Chart(ctx, { type: 'bar', data: data, options: options });
+                 if (expenseChart) {
+                     // Store the full cycle keys and original colors on the chart instance for later use
+                     expenseChart.fullKeys = chartDataInput.fullKeys || [];
+                     expenseChart.originalColors = dataset.originalColors || [];
+                     expenseChart.highlightColor = dataset.highlightColor || getCssVarValue('--accent');
+                 }
+
+             } else { // Monthly Overview (now Cycle Overview)
+                 const categories = chartDataInput.categories || [];
+                 if (categories.length === 0) {
+                      chartWrapperElement.innerHTML = `<p class="no-expenses-message">No spending data for this period.</p>`;
+                      return; // Exit if no categories
+                 }
+
+                 const backgroundColors = categories.map((category, index) => getCssVarValue(categoryColors[index % categoryColors.length].inner));
+                 const amounts = categories.map(cat => cat.amount);
+                 const maxAmount = amounts.length > 0 ? Math.max(...amounts.filter(v => !isNaN(v))) : 100;
+
+                 data = {
+                     labels: categories.map(cat => cat.name),
+                     datasets: [{ data: amounts, backgroundColor: backgroundColors, borderWidth: 0, borderRadius: 4, barPercentage: 0.8, categoryPercentage: 0.8 }]
+                 };
+                 options = {
+                     responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+                     scales: {
+                         x: { beginAtZero: true, suggestedMax: maxAmount * 1.18, // Increased for label space
+                             ticks: { color: textColorSecondary, font: { size: 11 }, padding: 8 },
+                             grid: { color: gridColor, drawTicks: false, borderDash: [3, 3] },
+                             border: { display: false },
+                             title: { display: true, text: 'Amount (R)', color: textColorSecondary, font: {size: 10, weight: '500'}, padding: {top: 10}}
+                         },
+                         y: { ticks: { color: textColorPrimary, font: { size: 12, weight: 500 }, padding: 12 }, grid: { display: false }, border: { display: false }, title: { display: false } }
+                     },
+                     plugins: {
+                         legend: { display: false },
+                         tooltip: { enabled: false, external: externalTooltipHandler }, // Use custom external tooltip
+                         datalabels: commonDataLabelConfig // Apply common datalabel config
+                     },
+                     layout: { padding: { top: 5, bottom: 5, left: 5, right: 15 } },
+                     onClick: handleChartClick
+                 };
+                 expenseChart = new Chart(ctx, { type: 'bar', data: data, options: options });
+             }
+         } // --- End of createOrUpdateChart ---
+
+        // --- Custom Tooltip ---
+        const getOrCreateTooltip = (chart) => {
+             let tooltipEl = chartWrapperElement.querySelector('div.chartjs-tooltip');
+             if (!tooltipEl) {
+                 tooltipEl = document.createElement('div');
+                 tooltipEl.classList.add('chartjs-tooltip');
+                 // Inline styles for simplicity, consider moving to CSS if complex
+                 tooltipEl.style.cssText = `background: var(--bg-base); border-radius: 6px; color: var(--text-primary); opacity: 1; pointer-events: none; position: absolute; transform: translate(-50%, -115%); transition: all .1s ease; padding: 10px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.35); border: 1px solid var(--border-color); font-family: var(--font-family); font-size: 13px; z-index: 10; min-width: 120px;`;
+                 const table = document.createElement('table');
+                 table.style.cssText = `margin: 0px; width: 100%;`;
+                 tooltipEl.appendChild(table);
+                 chartWrapperElement.appendChild(tooltipEl); // Append to wrapper, not chart directly
+             }
+             return tooltipEl;
+         };
+        const externalTooltipHandler = (context) => {
+              const { chart, tooltip } = context;
+              const tooltipEl = getOrCreateTooltip(chart);
+              if (tooltip.opacity === 0) { tooltipEl.style.opacity = 0; return; }
+              if (tooltip.body) {
+                  const titleLines = tooltip.title || [];
+                  const bodyLines = tooltip.body.map(b => b.lines);
+                  const tableHead = document.createElement('thead');
+                  titleLines.forEach(title => {
+                      const tr = document.createElement('tr'); const th = document.createElement('th');
+                      // Inline styles for simplicity
+                      th.style.cssText = `font-weight: 600; padding-bottom: 6px; text-align: left; border-bottom: 1px solid var(--border-color); margin-bottom: 6px; display: block; color: var(--text-primary);`;
+                      // Format title if it's a short history label (e.g., "Apr 22")
+                      let displayTitle = title;
+                      if (chart.options.indexAxis === 'y' && chart.fullKeys && chart.fullKeys.length > 0) {
+                          // Find the full cycle key corresponding to the short label title
+                          const fullKey = chart.fullKeys.find(key => {
+                               try {
+                                   const startDateStr = key.split('_to_')[0];
+                                   const startDate = new Date(startDateStr + 'T00:00:00Z');
+                                   const startMonthShort = startDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+                                   const startDayShort = startDate.getUTCDate();
+                                   return `${startMonthShort} ${startDayShort}` === title;
+                               } catch { return false;}
+                           });
+                           if(fullKey) displayTitle = formatCycleKeyForDisplay(fullKey); // Display full formatted cycle
+                      }
+                      th.appendChild(document.createTextNode(displayTitle));
+                      tr.appendChild(th); tableHead.appendChild(tr);
+                  });
+                  const tableBody = document.createElement('tbody');
+                  bodyLines.forEach((body, i) => {
+                      const colors = tooltip.labelColors[i];
+                      const span = document.createElement('span'); span.classList.add('tooltip-swatch');
+                      span.style.cssText = `background: ${colors.backgroundColor}; border-width: 0px; margin-right: 8px; height: 10px; width: 10px; border-radius: 3px; display: inline-block;`;
+                      const tr = document.createElement('tr'); const td = document.createElement('td');
+                      td.style.cssText = `border-width: 0; padding: 3px 0; display: flex; align-items: center; color: var(--text-primary);`;
+                      let amount = 0;
+                      // Get parsed value based on chart orientation
+                      if (tooltip.dataPoints[0]?.parsed) {
+                           amount = chart.options.indexAxis === 'y' ? tooltip.dataPoints[0].parsed.x : tooltip.dataPoints[0].parsed.y;
+                      }
+                      td.appendChild(span);
+                      // Display category name if it's the overview chart
+                      if (currentViewMode === 'monthlyOverview' && tooltip.dataPoints[0]?.label) {
+                         td.appendChild(document.createTextNode(`${tooltip.dataPoints[0].label}: `));
+                      }
+                      td.appendChild(document.createTextNode(formatCurrency(amount)));
+                      tr.appendChild(td); tableBody.appendChild(tr);
+                  });
+                  const tableRoot = tooltipEl.querySelector('table');
+                  while (tableRoot.firstChild) { tableRoot.firstChild.remove(); }
+                  tableRoot.appendChild(tableHead); tableRoot.appendChild(tableBody);
+              }
+              const {offsetLeft: positionX, offsetTop: positionY} = chart.canvas;
+              tooltipEl.style.opacity = 1;
+              tooltipEl.style.left = positionX + tooltip.caretX + 'px';
+              tooltipEl.style.top = positionY + tooltip.caretY + 'px';
+              tooltipEl.style.padding = tooltip.options.padding + 'px ' + tooltip.options.padding + 'px';
+         };
+
+
+        // --- UI Updates ---
+        // (Keep formatTransactionRow as is, assuming description formatting happens server-side or is simplified)
+        function formatTransactionRow(item) {
+            let description = item.description || 'N/A';
+            let dateStr = item.date || 'No Date';
+            let displayDate = '';
+            const originalDescription = item.originalDescription || description; // Use if available
+            const location = item.location || ''; // Use if available
+
+            // Date formatting (remains client-side)
+            if (dateStr !== 'No Date') {
+                 try {
+                     // Assuming dateStr is YYYY-MM-DD from server
+                     const dateObj = new Date(dateStr + 'T00:00:00Z'); // Treat as UTC
+                     if (!isNaN(dateObj.getTime())) {
+                         displayDate = dateObj.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
+                     } else { displayDate = dateStr; }
+                 } catch (e) { console.warn("Date formatting error:", e); displayDate = dateStr; }
+             } else { displayDate = "---"; }
+
+            // Construct the HTML
+            return `<div class="transaction-list-item">
+                        <div class="transaction-left-col">
+                            <span class="transaction-date-short">${displayDate}</span>
+                            <span class="transaction-description-short" title="${originalDescription}">${description}</span>
+                            ${location ? `<span class="transaction-location-inline">${location}</span>` : ''}
+                        </div>
+                        <span class="transaction-amount-short">${formatCurrency(item.amount)}</span>
+                    </div>`;
+        }
+
+        function displayCategoryList(cycleData) { // Renamed parameter
+            categoryListTitle.textContent = "Top Categories";
+            const categoriesToShow = cycleData?.categories || []; // Use cycleData
+            let listHTML = '';
+            if (categoriesToShow.length === 0) {
+                listHTML = `<p class="no-expenses-message">No spending categories found for this period.</p>`; // Updated message
+            }
+            else {
+                listHTML = `<ul class="category-list" id="category-list-ul">`;
+                categoriesToShow.forEach((category, index) => {
+                    const categoryName = category.name;
+                    const iconName = getIconNameForCategory(categoryName);
+                    const innerColorVar = categoryColors[index % categoryColors.length].inner;
+                    listHTML += `<li class="category-item" data-category="${categoryName}" style="--inner-color: var(${innerColorVar});">
+                                     <i data-feather="${iconName}"></i>
+                                     <span class="category-name">${categoryName}</span>
+                                     <span class="category-amount">${formatCurrency(category.amount)}</span>
+                                 </li>`;
+                });
+                listHTML += `</ul>`;
+            }
+            categoryContent.innerHTML = listHTML; // Update container
+            try { feather.replace({ width: 18, height: 18, 'stroke-width': 2 }); } // Render icons
+            catch (e) { console.error("Feather Error:", e); }
+        }
+
+        function displayCategoryDetails(categoryName, transactionsArray) {
+            categoryListTitle.textContent = categoryName; // Just the name for simplicity in this view
+            const expenses = transactionsArray || [];
+            let total = expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+            let transactionsHTML = '';
+            if (expenses.length > 0) {
+                expenses.forEach(item => { transactionsHTML += formatTransactionRow(item); });
+            }
+            // Update message for clarity
+            let detailsHTML = `<div class="category-details">
+                                  <div class="transactions-scroll-wrapper">
+                                     ${expenses.length > 0 ? transactionsHTML : `<p class="no-expenses-message">No expenses recorded for ${categoryName} in this period.</p>`}
+                                  </div>
+                                  ${expenses.length > 0 ? `<div class="details-total-row"><span>Total</span><span>${formatCurrency(total)}</span></div>` : ''}
+                               </div>`;
+            categoryContent.innerHTML = detailsHTML;
+        }
+
+         function displayHistoricalCategoryDetails(categoryName, cycleKey, transactionsArray) { // Renamed parameter monthKey to cycleKey
+           // Use the formatter for the title part
+           categoryListTitle.textContent = `${categoryName} - ${formatCycleKeyForDisplay(cycleKey)}`; // <-- USE FORMATTER
+           const expenses = transactionsArray || [];
+           let total = expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+           let transactionsHTML = '';
+           if (expenses.length > 0) { expenses.forEach(item => { transactionsHTML += formatTransactionRow(item); }); }
+           // Include formatted cycle key in the message as well
+           let detailsHTML = `<div class="category-details">
+                                  <div class="transactions-scroll-wrapper">
+                                    ${expenses.length > 0 ? transactionsHTML : `<p class="no-expenses-message">No expenses recorded for ${categoryName} in period ${formatCycleKeyForDisplay(cycleKey)}.</p>`}
+                                  </div>
+                                  ${expenses.length > 0 ? `<div class="details-total-row"><span>Total</span><span>${formatCurrency(total)}</span></div>` : ''}
+                              </div>`;
+           categoryContent.innerHTML = detailsHTML;
+       }
+
+        // --- Helper Functions for Back Button ---
+        function addBackButton(headerElement, buttonId) {
+             removeBackButton(headerElement, buttonId); // Prevent duplicates
+             const backButton = document.createElement('button');
+             backButton.id = buttonId;
+             backButton.className = 'back-button-header';
+             backButton.innerHTML = `<i data-feather="arrow-left"></i>Back`;
+             backButton.addEventListener('click', () => {
+                 currentViewMode = 'monthlyOverview'; // Switch back to overview mode
+                 selectedCategoryForHistory = null;
+                 updateDashboardUI(monthKeys[currentMonthIndex]); // Go back to overview for current CYCLE
+             });
+             headerElement.appendChild(backButton);
+             feather.replace({ width: 15, height: 15 }); // Render icon
+         }
+        function removeBackButton(headerElement, buttonId) {
+             const button = headerElement.querySelector(`#${buttonId}`);
+             if (button) button.remove();
+         }
+
+        // --- Event Handlers ---
+        function switchToCategoryDetailView(categoryName) {
+            const currentCycleKey = monthKeys[currentMonthIndex]; // Use current cycle key
+            const cycleData = dashboardData[currentCycleKey]; // Get data for the cycle
+            if (!cycleData) { console.error("SwitchToDetail: No data for cycle:", currentCycleKey); return; }
+
+            currentViewMode = 'categoryHistory'; // Change view mode
+            selectedCategoryForHistory = categoryName;
+            let transactionsToShow = [];
+
+            // Logic for "Other" needs to use the current cycle's data
+            if (categoryName === "Other") {
+                const displayedCategories = cycleData.categories || [];
+                const topCategoryNames = displayedCategories.map(cat => cat.name).filter(name => name !== "Other");
+                const allDetailKeys = Object.keys(cycleData.details || {});
+                const otherContributingKeys = allDetailKeys.filter(key => !topCategoryNames.includes(key));
+
+                otherContributingKeys.forEach(key => {
+                    const categoryTransactions = cycleData.details[key];
+                    if (categoryTransactions && categoryTransactions.length > 0) {
+                        transactionsToShow.push(...categoryTransactions);
+                    }
+                });
+                // Sort combined "Other" transactions by date
+                transactionsToShow.sort((a, b) => new Date(b.date) - new Date(a.date));
+            } else {
+                // Get transactions for a specific category
+                transactionsToShow = cycleData.details?.[categoryName] || [];
+                // Ensure already sorted (should be from backend, but belt-and-suspenders)
+                transactionsToShow.sort((a, b) => new Date(b.date) - new Date(a.date));
+            }
+
+            updateGraphForHistory(categoryName); // Update graph to show history for the category
+            displayCategoryDetails(categoryName, transactionsToShow); // Display details for the CURRENT cycle initially
+            addBackButton(listContainerHeader, 'back-to-list-header'); // Add back buttons
+            addBackButton(graphContainerHeader, 'back-to-graph-header');
+
+            // Highlight the bar corresponding to the current cycle on the history chart
+            requestAnimationFrame(() => {
+                 if(expenseChart) { highlightHistoryBarForCycle(currentCycleKey); } // Use new highlight function
+            });
+        }
+        function handleCategoryListItemClick(event) {
+             const categoryItem = event.target.closest('.category-item'); // Use delegation
+             if (categoryItem && categoryItem.dataset.category && currentViewMode === 'monthlyOverview') { // Ensure we are in overview
+                 const category = categoryItem.dataset.category;
+                 switchToCategoryDetailView(category);
+             }
+        }
+        function handleHistoryChartClick(event, elements, chart) {
+              if (elements.length > 0 && chart && chart.fullKeys && selectedCategoryForHistory) {
+                  const elementIndex = elements[0].index;
+                  // Use the raw cycle key stored on the chart instance
+                  const clickedCycleKey = chart.fullKeys[elementIndex];
+                  const categoryName = selectedCategoryForHistory; // Category remains the same
+
+                  if (clickedCycleKey && dashboardData[clickedCycleKey]) {
+                      // Recalculate transactions if "Other" was clicked, using the clicked cycle's data
+                      let transactionsForClickedCycle = [];
+                      if (categoryName === "Other") {
+                          const cycleDataHist = dashboardData[clickedCycleKey];
+                          const displayedCatsHist = cycleDataHist.categories || [];
+                          const topCatsHistNames = displayedCatsHist.map(c => c.name).filter(n => n !== "Other");
+                          const allDetailKeysHist = Object.keys(cycleDataHist.details || {});
+                          const otherKeysHist = allDetailKeysHist.filter(k => !topCatsHistNames.includes(k));
+                          otherKeysHist.forEach(key => {
+                              const catTransHist = cycleDataHist.details[key];
+                              if (catTransHist && catTransHist.length > 0) { transactionsForClickedCycle.push(...catTransHist); }
+                          });
+                          transactionsForClickedCycle.sort((a,b) => new Date(b.date) - new Date(a.date));
+                      } else {
+                          transactionsForClickedCycle = (dashboardData[clickedCycleKey].details?.[categoryName] || []).sort((a,b) => new Date(b.date) - new Date(a.date));
+                      }
+
+                      try { // Highlight clicked bar
+                          const dataset = chart.data.datasets[0];
+                          // Ensure originalColors and highlightColor are available
+                           if (chart.originalColors && chart.highlightColor) {
+                              const newBackgroundColors = chart.originalColors.slice();
+                              newBackgroundColors[elementIndex] = chart.highlightColor;
+                              dataset.backgroundColor = newBackgroundColors;
+                              chart.update('none'); // Update without animation
+                           } else {
+                               console.warn("Highlighting skipped: chart.originalColors or chart.highlightColor missing.");
+                           }
+                      } catch (highlightError) { console.error("Error highlighting chart bar:", highlightError); }
+
+                      // Display details for the CLICKED cycle period
+                      displayHistoricalCategoryDetails(categoryName, clickedCycleKey, transactionsForClickedCycle);
+                      // Ensure back button is present (it might already be)
+                      addBackButton(listContainerHeader, 'back-to-list-header');
+                  } else {
+                      console.warn(`Data not found for ${categoryName} in ${clickedCycleKey}`);
+                      // Use formatter for display
+                      categoryListTitle.textContent = `${categoryName} - ${formatCycleKeyForDisplay(clickedCycleKey)}`;
+                      categoryContent.innerHTML = `<p class="no-expenses-message">No transaction data found for ${categoryName} in period ${formatCycleKeyForDisplay(clickedCycleKey)}.</p>`;
+                      addBackButton(listContainerHeader, 'back-to-list-header');
+                  }
+              }
+         }
+
+        // --- UPDATED Cycle Navigation ---
+        prevMonthBtn.addEventListener('click', () => {
+            if (currentMonthIndex > 0) {
+                currentMonthIndex--;
+                const newCycleKey = monthKeys[currentMonthIndex];
+                if (currentViewMode === 'categoryHistory' && selectedCategoryForHistory) {
+                    // If in history view, update the displayed details and highlight
+                    updateCategoryDetailForNewCycle(newCycleKey, selectedCategoryForHistory);
+                } else {
+                    // Otherwise, switch back to overview mode for the new cycle
+                    currentViewMode = 'monthlyOverview'; selectedCategoryForHistory = null;
+                    updateDashboardUI(newCycleKey);
+                }
+            }
+        });
+        nextMonthBtn.addEventListener('click', () => {
+            if (currentMonthIndex < monthKeys.length - 1) {
+                currentMonthIndex++;
+                const newCycleKey = monthKeys[currentMonthIndex];
+                 if (currentViewMode === 'categoryHistory' && selectedCategoryForHistory) {
+                    // If in history view, update the displayed details and highlight
+                    updateCategoryDetailForNewCycle(newCycleKey, selectedCategoryForHistory);
+                 } else {
+                    // Otherwise, switch back to overview mode for the new cycle
+                    currentViewMode = 'monthlyOverview'; selectedCategoryForHistory = null;
+                    updateDashboardUI(newCycleKey);
+                 }
+            }
+        });
+        // --- End Event Handlers ---
+
+        // --- Core Update Functions ---
+        function updateGraphForHistory(categoryName) {
+              const historyData = getHistoricalDataForCategory(categoryName, 10); // Use 10 cycles
+              graphTitleElement.textContent = `History: ${categoryName}`; // Updated title
+              createOrUpdateChart(historyData, 'categoryHistory');
+         }
+
+        function updateDashboardUI(cycleKey) { // Renamed parameter
+              const data = dashboardData[cycleKey]; // Use cycleKey
+              currentViewMode = 'monthlyOverview'; selectedCategoryForHistory = null; // Reset state
+              removeBackButton(listContainerHeader, 'back-to-list-header'); // Clean up buttons
+              removeBackButton(graphContainerHeader, 'back-to-graph-header');
+              graphTitleElement.textContent = "Spending by Category"; // Reset titles
+              categoryListTitle.textContent = "Top Categories";
+
+              if (!data) {
+                  // Handle no data for the cycle - display formatted key, zero total
+                   currentMonthDisplay.textContent = formatCycleKeyForDisplay(cycleKey); // Display formatted key
+                   totalSpendAmountEl.textContent = formatCurrency(0);
+                   categoryContent.innerHTML = `<p class="no-expenses-message">No spending data found for this period.</p>`;
+                   if (expenseChart) { expenseChart.destroy(); expenseChart = null; }
+                   chartWrapperElement.innerHTML = '<canvas id="expense-chart"></canvas>'; // Ensure canvas exists for next load
+                   // Update button states based on index
+                   prevMonthBtn.disabled = (currentMonthIndex <= 0);
+                   nextMonthBtn.disabled = (currentMonthIndex >= monthKeys.length - 1);
+                   return;
+              }
+
+              // Use the formatter for display
+              currentMonthDisplay.textContent = formatCycleKeyForDisplay(cycleKey); // <-- USE FORMATTER
+              totalSpendAmountEl.textContent = formatCurrency(data.total);
+              requestAnimationFrame(() => { // Ensure UI updates smoothly
+                  createOrUpdateChart(data, 'monthlyOverview');
+                  displayCategoryList(data); // Pass cycle data
+              });
+              prevMonthBtn.disabled = (currentMonthIndex <= 0);
+              nextMonthBtn.disabled = (currentMonthIndex >= monthKeys.length - 1);
+         }
+
+         // Renamed function for clarity
+        function highlightHistoryBarForCycle(cycleKeyToHighlight) {
+            if (currentViewMode !== 'categoryHistory' || !expenseChart || !expenseChart.data?.datasets?.[0]) return;
+
+            // Check required properties exist on the chart instance
+            if (!expenseChart.fullKeys || !expenseChart.originalColors || !expenseChart.highlightColor) {
+                console.error("Highlight: Missing required properties (fullKeys, originalColors, or highlightColor) on chart instance.");
+                return;
+            }
+
+            try {
+                const dataset = expenseChart.data.datasets[0];
+                const indexToHighlight = expenseChart.fullKeys.indexOf(cycleKeyToHighlight); // Find index using the raw key
+
+                // Create a fresh copy of original colors for modification
+                const newBackgroundColors = expenseChart.originalColors.slice();
+
+                if (indexToHighlight !== -1) {
+                     newBackgroundColors[indexToHighlight] = expenseChart.highlightColor; // Apply highlight color
+                     // console.log(`Highlighting index ${indexToHighlight} for key ${cycleKeyToHighlight}`);
+                } else {
+                     console.warn(`Highlight: Cycle key "${cycleKeyToHighlight}" not found in chart fullKeys.`);
+                     // Keep original colors if key not found
+                }
+                dataset.backgroundColor = newBackgroundColors; // Update dataset
+                expenseChart.update('none'); // Update chart without animation
+            } catch (error) {
+                console.error("Error highlighting history bar:", error);
+            }
+        }
+
+        // Renamed function for clarity
+        function updateCategoryDetailForNewCycle(newCycleKey, categoryName) {
+            const data = dashboardData[newCycleKey]; // Get data for the target cycle
+            // Update header display
+            currentMonthDisplay.textContent = formatCycleKeyForDisplay(newCycleKey); // Use formatter
+            totalSpendAmountEl.textContent = formatCurrency(data?.total || 0); // Update total spend display
+            // Update navigation button states
+            prevMonthBtn.disabled = (currentMonthIndex <= 0);
+            nextMonthBtn.disabled = (currentMonthIndex >= monthKeys.length - 1);
+
+            // Recalculate transactions for the specific category in the new cycle
+            let transactionsForNewCycle = [];
+             if (categoryName === "Other") {
+                 // Use the new cycle's data to determine "Other" transactions
+                 const cycleDataNew = dashboardData[newCycleKey];
+                 if (cycleDataNew && cycleDataNew.details) {
+                     const displayedCatsNew = cycleDataNew.categories || [];
+                     const topCatsNewNames = displayedCatsNew.map(c => c.name).filter(n => n !== "Other");
+                     const allDetailKeysNew = Object.keys(cycleDataNew.details);
+                     const otherKeysNew = allDetailKeysNew.filter(k => !topCatsNewNames.includes(k));
+                     otherKeysNew.forEach(key => {
+                         const catTransNew = cycleDataNew.details[key];
+                         if (catTransNew && catTransNew.length > 0) { transactionsForNewCycle.push(...catTransNew); }
+                     });
+                     transactionsForNewCycle.sort((a,b) => new Date(b.date) - new Date(a.date));
+                 }
+             } else {
+                 // Get transactions for the specific category from the new cycle's data
+                 transactionsForNewCycle = (data?.details?.[categoryName] || []).sort((a,b) => new Date(b.date) - new Date(a.date));
+             }
+
+            displayCategoryDetails(categoryName, transactionsForNewCycle); // Update list with new cycle's transactions
+
+            // Update the history chart highlight after the DOM updates
+            requestAnimationFrame(() => { highlightHistoryBarForCycle(newCycleKey); });
+        }
+        // --- End Core Update Functions ---
+
+
+        // --- Data Loading Functions ---
+        function onDataLoaded(data) {
+             console.log("Data received from server:", data);
+             if (data.error) { onDataLoadError(new Error(data.error)); return; }
+             if (Object.keys(data).length === 0) {
+                 onDataLoadError(new Error("No expense data found in the sheet for any period."));
+                 currentMonthDisplay.textContent = "No Data";
+                 return;
+             }
+             dashboardData = data;
+             // Get cycle keys and sort them chronologically (standard sort works for YYYY-MM-DD format)
+             monthKeys = Object.keys(dashboardData).sort();
+
+             if (monthKeys.length > 0) {
+                 currentMonthIndex = monthKeys.length - 1; // Start at most recent cycle
+                 updateDashboardUI(monthKeys[currentMonthIndex]); // Initial UI update
+             } else {
+                 onDataLoadError(new Error("No valid expense data cycles found to display."));
+                 currentMonthDisplay.textContent = "No Data";
+             }
+             feather.replace(); // Ensure all initial icons render
+         }
+        function onDataLoadError(error) {
+             console.error("Error loading dashboard data:", error);
+             currentMonthDisplay.textContent = "Error"; totalSpendAmountEl.textContent = "Error";
+             categoryContent.innerHTML = `<p class="no-expenses-message" style="color: #e15759;">Failed to load data: ${error.message}. Check logs.</p>`;
+             if (expenseChart) expenseChart.destroy(); expenseChart = null;
+             const existingMessage = chartWrapperElement.querySelector('.no-expenses-message'); if (existingMessage) existingMessage.remove();
+             chartWrapperElement.innerHTML = '<canvas id="expense-chart"></canvas>'; // Reset chart area
+             prevMonthBtn.disabled = true; nextMonthBtn.disabled = true;
+         }
+        // --- End Data Loading Functions ---
+
+        // --- Initialize ---
+        document.addEventListener('DOMContentLoaded', () => {
+             setChartDefaults();
+             currentMonthDisplay.textContent = "Loading...";
+             totalSpendAmountEl.textContent = "---";
+             categoryContent.innerHTML = "<p class='no-expenses-message'>Loading data...</p>";
+
+             // --- Attach listener to parent container using Delegation ---
+             const categoryContentElement = document.getElementById('category-content');
+             if (categoryContentElement) {
+                 // Listen for clicks, check if target is inside a .category-item
+                 categoryContentElement.addEventListener('click', handleCategoryListItemClick);
+             } else {
+                 console.error("Could not find #category-content element to attach listener.");
+             }
+             // --- End listener attachment ---
+
+             // Fetch data from backend
+             google.script.run
+                 .withSuccessHandler(onDataLoaded)
+                 .withFailureHandler(onDataLoadError)
+                 .getDataForDashboard();
+         });
+        // --- End Initialize ---
+
+    </script>
+
+</body>
+</html>

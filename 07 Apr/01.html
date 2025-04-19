@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark"> <!-- Default theme is dark -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Dashboard - Styled</title>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* --- Configuration: Default Dark Mode (FROM EXPENSE TRACKER) --- */
+        :root {
+            --bg-primary-dark: #1a1d24;         /* Base background */
+            --bg-secondary-dark: #252932;       /* Card/Surface background */
+            --bg-tertiary-dark: #313641;        /* Hover background / Subtle elements */
+            --text-primary-dark: #e0e6f0;       /* Primary text */
+            --text-secondary-dark: #a0a8b4;     /* Secondary text */
+            --text-tertiary-dark: #767f8d;      /* Tertiary text / Icons */
+            --accent-primary-dark: #00f5d4;     /* Teal */
+            --accent-secondary-dark: #00bfa5;   /* Darker Teal */
+            --color-success-dark: #34d399;
+            --color-warning-dark: #f59e0b;
+            --color-error-dark: #f43f5e;
+            --border-color-dark: #3e4450;       /* Borders */
+            --border-highlight-dark: var(--accent-primary-dark);
+            --placeholder-color-dark: #5a6372;
+            --shadow-color-dark: rgba(0, 245, 212, 0.1); /* Shadow for primary button/elements */
+            --button-primary-text-dark: var(--bg-primary-dark);
+            --grid-line-color-dark: rgba(62, 68, 80, 0.6); /* Adjusted for dark */
+
+             /* Ministric Category Colors (Keep for chart consistency) */
+            --c1: #4e79a7; --c1-light: rgba(78, 121, 167, 0.25);
+            --c2: #f28e2b; --c2-light: rgba(242, 142, 43, 0.25);
+            --c3: #e15759; --c3-light: rgba(225, 87, 89, 0.25);
+            --c4: #76b7b2; --c4-light: rgba(118, 183, 178, 0.25);
+            --c5: #59a14f; --c5-light: rgba(89, 161, 79, 0.25);
+            --c6: #edc948; --c6-light: rgba(237, 201, 72, 0.25);
+            --c7: #b07aa1; --c7-light: rgba(176, 122, 161, 0.25);
+            --c8: #ff9da7; --c8-light: rgba(255, 157, 167, 0.25);
+            --c9: #9c755f; --c9-light: rgba(156, 117, 95, 0.25);
+            --c10: #bab0ac; --c10-light: rgba(186, 176, 172, 0.25);
+            --history-bar-opacity: 0.45;
+        }
+
+        /* --- Configuration: Light Mode (FROM EXPENSE TRACKER) --- */
+        :root[data-theme="light"] {
+            --bg-primary-light: #f8f9fa;
+            --bg-secondary-light: #ffffff;
+            --bg-tertiary-light: #e9ecef;
+            --text-primary-light: #212529;
+            --text-secondary-light: #495057;
+            --text-tertiary-light: #6c757d;
+            --accent-primary-light: #00a991;
+            --accent-secondary-light: #007d6a;
+            --color-success-light: #198754;
+            --color-warning-light: #ffc107;
+            --color-error-light: #dc3545;
+            --border-color-light: #dee2e6;
+            --border-highlight-light: var(--accent-primary-light);
+            --placeholder-color-light: #adb5bd;
+            --shadow-color-light: rgba(0, 169, 145, 0.2);
+            --button-primary-text-light: #ffffff;
+            --grid-line-color-light: rgba(222, 226, 230, 0.7); /* Adjusted for light */
+
+            /* Keep Ministric Colors */
+            --c1: #4e79a7; --c1-light: rgba(78, 121, 167, 0.25);
+            --c2: #f28e2b; --c2-light: rgba(242, 142, 43, 0.25);
+            --c3: #e15759; --c3-light: rgba(225, 87, 89, 0.25);
+            --c4: #76b7b2; --c4-light: rgba(118, 183, 178, 0.25);
+            --c5: #59a14f; --c5-light: rgba(89, 161, 79, 0.25);
+            --c6: #edc948; --c6-light: rgba(237, 201, 72, 0.25);
+            --c7: #b07aa1; --c7-light: rgba(176, 122, 161, 0.25);
+            --c8: #ff9da7; --c8-light: rgba(255, 157, 167, 0.25);
+            --c9: #9c755f; --c9-light: rgba(156, 117, 95, 0.25);
+            --c10: #bab0ac; --c10-light: rgba(186, 176, 172, 0.25);
+            --history-bar-opacity: 0.45;
+        }
+
+        /* --- Theme Variable Mapping (FROM EXPENSE TRACKER) --- */
+        :root {
+            /* Map generic variables */
+            --bg-primary: var(--bg-primary-dark);
+            --bg-secondary: var(--bg-secondary-dark);
+            --bg-tertiary: var(--bg-tertiary-dark);
+            --text-primary: var(--text-primary-dark);
+            --text-secondary: var(--text-secondary-dark);
+            --text-tertiary: var(--text-tertiary-dark);
+            --accent-primary: var(--accent-primary-dark);
+            --accent-secondary: var(--accent-secondary-dark);
+            --color-success: var(--color-success-dark);
+            --color-warning: var(--color-warning-dark);
+            --color-error: var(--color-error-dark);
+            --border-color: var(--border-color-dark);
+            --border-highlight: var(--border-highlight-dark);
+            --placeholder-color: var(--placeholder-color-dark);
+            --shadow-color: var(--shadow-color-dark);
+            --button-primary-text: var(--button-primary-text-dark);
+            --grid-line-color: var(--grid-line-color-dark);
+
+             /* General Settings */
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --border-radius: 8px; /* Expense tracker radius */
+            --card-radius: var(--border-radius); /* Use consistent radius */
+            --transition-speed: 0.3s;
+            --fast-transition-speed: 0.15s;
+
+            /* Layout dimensions from Ministric (can be adjusted) */
+            --sidebar-width: 240px;
+            --header-height: 65px; /* Adjust if needed */
+            --content-padding: 30px; /* Slightly reduced padding */
+            --card-padding: 25px; /* Slightly reduced padding */
+        }
+
+         /* Apply Light Mode Mappings */
+        :root[data-theme="light"] {
+            --bg-primary: var(--bg-primary-light);
+            --bg-secondary: var(--bg-secondary-light);
+            --bg-tertiary: var(--bg-tertiary-light);
+            --text-primary: var(--text-primary-light);
+            --text-secondary: var(--text-secondary-light);
+            --text-tertiary: var(--text-tertiary-light);
+            --accent-primary: var(--accent-primary-light);
+            --accent-secondary: var(--accent-secondary-light);
+            --color-success: var(--color-success-light);
+            --color-warning: var(--color-warning-light);
+            --color-error: var(--color-error-light);
+            --border-color: var(--border-color-light);
+            --border-highlight: var(--border-highlight-light);
+            --placeholder-color: var(--placeholder-color-light);
+            --shadow-color: var(--shadow-color-light);
+            --button-primary-text: var(--button-primary-text-light);
+            --grid-line-color: var(--grid-line-color-light);
+        }
+
+
+        /* --- Base & Reset (Adapted) --- */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html {
+             font-size: 15px; /* Slightly smaller base */
+             scroll-behavior: smooth;
+             color-scheme: dark light;
+             transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
+             height: 100%;
+             overflow: hidden; /* Prevent main scroll */
+        }
+        body {
+            font-family: var(--font-family); background-color: var(--bg-primary); color: var(--text-primary);
+            line-height: 1.6; height: 100%; display: flex;
+            transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
+            overflow: hidden; /* Prevent main scroll */
+        }
+        button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+        ul { list-style: none; } a { color: inherit; text-decoration: none; }
+
+        /* --- Feather Icon Styling (FROM EXPENSE TRACKER) --- */
+        svg.feather, i.feather { /* Target both potential ways feather adds icons */
+            width: 18px;
+            height: 18px;
+            stroke-width: 2;
+            vertical-align: middle;
+            stroke: currentColor; /* Inherit color by default */
+            flex-shrink: 0; /* Prevent icons shrinking in flex layouts */
+        }
+
+        /* --- Sidebar (Ministric Layout + Expense Tracker Style) --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-secondary); /* Surface background */
+            padding: 25px 15px; /* Adjusted padding */
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            border-right: 1px solid var(--border-color);
+            transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease;
+        }
+        .sidebar-brand {
+            font-size: 1.4rem; /* Slightly larger */
+            font-weight: 700;
+            margin-bottom: 30px;
+            padding: 0 10px; /* Padding inside */
+            color: var(--text-primary);
+            text-align: center; /* Center align maybe? */
+        }
+        .sidebar-nav ul {
+            display: flex;
+            flex-direction: column;
+            gap: 6px; /* Slightly smaller gap */
+        }
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px; /* Adjusted padding */
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            font-size: 0.9rem; /* Slightly smaller font */
+            color: var(--text-secondary);
+            transition: background-color var(--fast-transition-speed) ease, color var(--fast-transition-speed) ease;
+            position: relative;
+        }
+        .sidebar-nav a:hover {
+            background-color: var(--bg-tertiary); /* Hover background */
+            color: var(--text-primary);
+        }
+        .sidebar-nav a.active {
+            background-color: var(--accent-primary);
+            color: var(--button-primary-text); /* Use button text color for contrast */
+            font-weight: 600;
+        }
+        .sidebar-nav a svg.feather { /* Ensure icon color changes */
+            margin-right: 12px; /* Space between icon and text */
+            stroke: var(--text-tertiary); /* Default icon color */
+            transition: stroke var(--fast-transition-speed) ease;
+        }
+         .sidebar-nav a:hover svg.feather {
+             stroke: var(--text-primary);
+         }
+        .sidebar-nav a.active svg.feather {
+            stroke: var(--button-primary-text); /* Active icon color */
+        }
+        .coming-soon-badge {
+             font-size: 0.65rem; /* Tiny */
+             font-weight: 600;
+             background-color: var(--text-tertiary);
+             color: var(--bg-secondary); /* Contrast against badge bg */
+             padding: 1px 5px;
+             border-radius: 4px;
+             margin-left: auto; /* Push to the right */
+             line-height: 1.2;
+             text-transform: uppercase;
+             letter-spacing: 0.5px;
+             transition: background-color var(--fast-transition-speed) ease;
+         }
+         .sidebar-nav a:hover .coming-soon-badge {
+             background-color: var(--text-secondary);
+             color: var(--bg-tertiary);
+         }
+         .sidebar-nav a.active .coming-soon-badge {
+             background-color: rgba(255, 255, 255, 0.3); /* Subtle on active */
+             color: var(--accent-primary);
+         }
+
+        /* --- Main Area (Ministric Layout + Expense Tracker Style) --- */
+        .main-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden; /* Prevent scroll */
+            background-color: var(--bg-primary); /* Base background */
+        }
+        .main-content-wrapper {
+            flex-grow: 1;
+            overflow-y: auto; /* Enable scrolling HERE */
+            padding: var(--content-padding);
+            display: flex;
+            flex-direction: column;
+            gap: 30px; /* Gap between header and core */
+        }
+
+        /* --- Header Controls (Ministric Layout + Expense Tracker Style) --- */
+        .main-content-header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            padding-bottom: 15px; /* Space below */
+            border-bottom: 1px solid var(--border-color); /* Add subtle separator */
+        }
+        .month-navigator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .month-navigator button {
+            padding: 8px; /* Click area */
+            border-radius: var(--border-radius);
+            color: var(--text-secondary);
+            transition: background-color var(--fast-transition-speed) ease, color var(--fast-transition-speed) ease;
+            line-height: 1; /* Prevent button height issues */
+        }
+        .month-navigator button:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        .month-navigator button svg.feather {
+            width: 20px; height: 20px; margin: 0; /* No margin needed */
+        }
+        .current-month {
+            font-size: 1.1rem; /* Adjusted size */
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 160px; /* Keep width */
+            text-align: center;
+        }
+        .total-spend { text-align: right; }
+        .total-spend-label {
+            font-size: 0.75rem; /* Smaller */
+            color: var(--text-secondary);
+            margin-bottom: 2px; /* Tighter spacing */
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+        .total-spend-amount {
+            font-size: 1.5rem; /* Adjusted size */
+            font-weight: 600; /* Slightly less bold */
+            color: var(--text-primary);
+            line-height: 1.1;
+        }
+
+        /* --- Theme Switcher (FROM EXPENSE TRACKER - Placed in header) --- */
+        .theme-switch-wrapper { display: flex; align-items: center; gap: 0.5rem; margin-left: 20px; /* Add space */ }
+        .theme-switch { display: inline-block; height: 22px; position: relative; width: 44px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: var(--bg-tertiary); bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: var(--transition-speed); border-radius: 22px; border: 1px solid var(--border-color); }
+        .slider:before { background-color: var(--text-secondary); bottom: 2px; content: ""; height: 16px; left: 3px; position: absolute; transition: var(--transition-speed); width: 16px; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-secondary); }
+        input:checked + .slider:before { transform: translateX(22px); background-color: var(--bg-secondary); }
+        .theme-switch-wrapper .icon { stroke: var(--text-tertiary); width: 18px; height: 18px; }
+
+        /* Add a wrapper for controls group */
+        .header-controls-right {
+             display: flex;
+             align-items: center;
+             gap: 20px; /* Space between total and switch */
+        }
+
+
+        /* --- Dashboard Core Layout (Ministric Layout) --- */
+        .dashboard-core {
+            display: grid;
+            grid-template-columns: 3fr 2fr; /* Keep ratio */
+            gap: 30px;
+            flex-grow: 1;
+            min-height: 0; /* Crucial for flex/grid children scroll */
+        }
+        .graph-container, .category-list-container {
+            background-color: var(--bg-secondary); /* Use card background */
+            border-radius: var(--card-radius);
+            border: 1px solid var(--border-color); /* Add border */
+            padding: var(--card-padding);
+            display: flex;
+            flex-direction: column;
+            /* box-shadow: 0 3px 8px var(--shadow-color); Subtle shadow */
+            overflow: hidden; /* Prevent content spill */
+            transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease;
+        }
+
+        /* --- Container Header & Back Button (Adapted Style) --- */
+        .container-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .container-title {
+            font-size: 1.1rem; /* Slightly larger */
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0; padding: 0; border: none; /* Reset Ministric styles */
+        }
+        /* Style back button like secondary button */
+        .back-button-header {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background-color: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 0.4rem 0.9rem; /* Adjusted padding */
+            cursor: pointer;
+            transition: all var(--fast-transition-speed) ease;
+            font-size: 0.85rem;
+            font-weight: 500;
+            line-height: 1;
+        }
+        .back-button-header svg.feather { width: 15px; height: 15px; margin-right: 0px; stroke-width: 2.5;}
+        .back-button-header:hover {
+            border-color: var(--text-tertiary);
+            color: var(--text-primary);
+            background-color: var(--bg-tertiary);
+        }
+         .back-button-header:active {
+             background-color: var(--border-color);
+             transform: translateY(1px);
+         }
+
+
+        /* --- Chart (Ministric Layout + Expense Tracker Style) --- */
+        .chart-wrapper {
+            flex-grow: 1;
+            position: relative;
+            min-height: 280px; /* Adjusted min height */
+        }
+        #expense-chart {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+        }
+
+        /* --- Category List / Details Area (Adapted) --- */
+        #category-content {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+        /* Category Overview List */
+        .category-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin: 0; padding: 0;
+            padding-right: 5px; /* Space for scrollbar */
+        }
+        .category-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 8px; /* Adjusted padding */
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color var(--fast-transition-speed) ease;
+            position: relative;
+            border-bottom: 1px solid transparent; /* Placeholder for hover */
+        }
+        .category-list .category-item + .category-item {
+            margin-top: 2px; /* Smaller gap */
+             border-top: 1px solid var(--border-color); /* Separator */
+        }
+         .category-list .category-item:first-child {
+             border-top: none;
+         }
+        .category-item:hover {
+            background-color: var(--bg-tertiary);
+        }
+        /* Keep dots for consistency with chart colors */
+        .category-item .dot-container {
+            width: 18px; height: 18px;
+            position: relative; margin-right: 12px;
+            flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+        }
+        .category-item .dot-container::before {
+            content: ''; width: 14px; height: 14px; border-radius: 50%;
+            background-color: var(--outer-color); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            opacity: 0.7; /* Make outer lighter */
+        }
+        .category-item .dot-container::after {
+            content: ''; width: 7px; height: 7px; border-radius: 50%;
+            background-color: var(--inner-color); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1;
+        }
+        .category-name {
+            font-weight: 500; color: var(--text-primary); flex-grow: 1; margin-right: 15px; font-size: 0.9rem;
+        }
+        .category-amount {
+            font-weight: 500; color: var(--text-primary); white-space: nowrap; font-size: 0.9rem;
+        }
+
+        /* --- Category Details Layout (Ministric Structure + Expense Tracker Style) --- */
+        .category-details {
+            display: flex; flex-direction: column; flex-grow: 1; min-height: 0; overflow: hidden;
+        }
+        .transactions-scroll-wrapper {
+             flex-grow: 1; overflow-y: auto; min-height: 0;
+             padding-right: 5px; /* Space for scrollbar */
+        }
+        .transaction-list-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .transactions-scroll-wrapper .transaction-list-item:last-child {
+            border-bottom: none;
+        }
+        .transaction-details { display: flex; flex-direction: column; gap: 2px; margin-right: 15px; }
+        .transaction-description { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); line-height: 1.3; }
+        .transaction-date { font-size: 0.75rem; color: var(--text-secondary); line-height: 1.2; }
+        .transaction-amount { font-size: 0.9rem; font-weight: 500; color: var(--text-primary); white-space: nowrap; text-align: right; }
+        .details-total-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 5px;
+            border-top: 1px solid var(--border-color);
+            font-weight: 600;
+            font-size: 0.95rem;
+            flex-shrink: 0; /* Prevent shrinking */
+            margin-top: 10px; /* Space above total */
+            color: var(--text-primary);
+        }
+        .no-expenses-message {
+             color: var(--text-secondary); font-style: italic;
+             margin-top: 20px; text-align: center; font-size: 0.85rem;
+             padding: 20px;
+        }
+
+        /* --- Scrollbar (FROM EXPENSE TRACKER) --- */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background-color: var(--text-tertiary); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background-color: var(--text-secondary); }
+        /* Apply scrollbar styling specifically to scrollable areas */
+        .main-content-wrapper::-webkit-scrollbar,
+        .category-list::-webkit-scrollbar,
+        .transactions-scroll-wrapper::-webkit-scrollbar { width: 6px; height: 6px; }
+        .main-content-wrapper::-webkit-scrollbar-track,
+        .category-list::-webkit-scrollbar-track,
+        .transactions-scroll-wrapper::-webkit-scrollbar-track { background: var(--bg-tertiary); border-radius: 3px; } /* Slightly visible track */
+        .main-content-wrapper::-webkit-scrollbar-thumb,
+        .category-list::-webkit-scrollbar-thumb,
+        .transactions-scroll-wrapper::-webkit-scrollbar-thumb { background-color: var(--text-tertiary); border-radius: 3px; }
+        .main-content-wrapper::-webkit-scrollbar-thumb:hover,
+        .category-list::-webkit-scrollbar-thumb:hover,
+        .transactions-scroll-wrapper::-webkit-scrollbar-thumb:hover { background-color: var(--text-secondary); }
+
+
+        /* --- Chart Tooltip (Adapted Style) --- */
+        div.chartjs-tooltip {
+            background: var(--bg-primary); /* Use primary bg for tooltip */
+            border-radius: 6px;
+            color: var(--text-primary);
+            opacity: 1; pointer-events: none; position: absolute;
+            transform: translate(-50%, -115%); transition: all .1s ease;
+            padding: 8px 12px; /* Smaller padding */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* Darker shadow */
+            border: 1px solid var(--border-color);
+            font-family: var(--font-family);
+            font-size: 12px; /* Smaller font */
+            z-index: 10; min-width: 110px;
+        }
+        div.chartjs-tooltip table { margin: 0px; width: 100%; }
+        div.chartjs-tooltip th {
+            font-weight: 600; padding-bottom: 5px; text-align: left;
+            border-bottom: 1px solid var(--border-color); margin-bottom: 5px; display: block;
+            color: var(--text-primary); /* Ensure title color */
+        }
+        div.chartjs-tooltip td {
+            border-width: 0; padding: 2px 0; display: flex; align-items: center;
+            color: var(--text-secondary); /* Amount color */
+        }
+        div.chartjs-tooltip span.tooltip-swatch {
+            border-width: 2px; margin-right: 6px; height: 9px; width: 9px; /* Smaller swatch */
+            border-radius: 2px; display: inline-block;
+        }
+
+        /* --- Responsiveness (Combine ideas) --- */
+        @media (max-width: 1200px) {
+            .dashboard-core { grid-template-columns: 1fr 1fr; /* Adjust ratio */ }
+        }
+        @media (max-width: 992px) {
+            .dashboard-core { grid-template-columns: 1fr; /* Stack columns */ }
+            .graph-container, .category-list-container { min-height: 350px; } /* Give space when stacked */
+            .main-content-wrapper { padding: 20px; gap: 25px;}
+            .sidebar { width: 200px; padding: 20px 10px; } /* Slimmer sidebar */
+            .sidebar-brand { font-size: 1.2rem; }
+        }
+         @media (max-width: 768px) {
+             html { font-size: 14px; }
+             .sidebar { position: fixed; /* Or transform: translateX(-100%) */ left: calc(-1 * var(--sidebar-width)); width: var(--sidebar-width); /* Keep width for slide-in */ z-index: 100; transition: transform 0.3s ease; }
+             .sidebar.open { transform: translateX(0); } /* Add class via JS for toggle */
+             /* Add a menu toggle button (needs HTML element) */
+             /* .menu-toggle { display: block; position: fixed; top: 15px; left: 15px; z-index: 101; ... } */
+             .main-area { margin-left: 0; /* Full width */ }
+             .main-content-header-controls { flex-direction: column; align-items: stretch; gap: 15px; border-bottom: none; padding-bottom: 0; }
+             .month-navigator { justify-content: center; }
+             .header-controls-right { justify-content: space-between; width: 100%;}
+             .total-spend { text-align: left; }
+             .main-content-wrapper { padding: 15px; gap: 20px;}
+             :root { --content-padding: 15px; --card-padding: 15px; }
+         }
+         @media (max-width: 576px) {
+             .current-month { min-width: 120px; font-size: 1rem; }
+             .total-spend-amount { font-size: 1.3rem; }
+             .container-title { font-size: 1rem; }
+             .category-name, .category-amount { font-size: 0.85rem; }
+             .transaction-description, .transaction-amount { font-size: 0.8rem; }
+         }
+
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">FinDash</div> <!-- Changed Name -->
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="#" class="active"><i data-feather="grid"></i>Dashboard</a></li>
+                <li><a href="#"><i data-feather="pie-chart"></i>Reports <span class="coming-soon-badge">Soon</span></a></li>
+                <li><a href="#"><i data-feather="repeat"></i>Transactions <span class="coming-soon-badge">Soon</span></a></li> <!-- Changed Icon -->
+                <li><a href="#"><i data-feather="target"></i>Budgets <span class="coming-soon-badge">Soon</span></a></li>
+                <li><a href="#"><i data-feather="settings"></i>Settings <span class="coming-soon-badge">Soon</span></a></li>
+            </ul>
+        </nav>
+        <!-- Add User Profile / Logout at bottom if desired -->
+    </aside>
+
+    <!-- Main Area -->
+    <main class="main-area">
+        <div class="main-content-wrapper">
+             <!-- Header Controls -->
+             <div class="main-content-header-controls">
+                 <div class="month-navigator">
+                     <button id="prev-month" title="Previous Month"><i data-feather="chevron-left"></i></button>
+                     <div class="current-month" id="current-month-display">October 2023</div>
+                     <button id="next-month" title="Next Month"><i data-feather="chevron-right"></i></button>
+                 </div>
+                 <div class="header-controls-right"> <!-- Wrapper added -->
+                     <div class="total-spend">
+                         <div class="total-spend-label">Total Spent This Month</div>
+                         <div class="total-spend-amount" id="total-spend-amount">R 0.00</div>
+                     </div>
+                     <!-- Theme Switcher -->
+                     <div class="theme-switch-wrapper">
+                         <i data-feather="sun" class="icon"></i>
+                         <label class="theme-switch" for="theme-checkbox">
+                             <input type="checkbox" id="theme-checkbox" />
+                             <div class="slider"></div>
+                         </label>
+                         <i data-feather="moon" class="icon"></i>
+                     </div>
+                     <!-- End Theme Switcher -->
+                 </div>
+             </div>
+             <!-- Dashboard Core -->
+            <div class="dashboard-core">
+                <!-- Graph Container -->
+                <div class="graph-container">
+                    <div class="container-header" id="graph-header">
+                         <h2 class="container-title" id="graph-title">Spending by Category</h2>
+                         <!-- Back button added dynamically -->
+                     </div>
+                    <div class="chart-wrapper">
+                        <canvas id="expense-chart"></canvas>
+                    </div>
+                </div>
+                <!-- Category/Details Container -->
+                <div class="category-list-container">
+                    <div class="container-header" id="list-header">
+                         <h2 class="container-title" id="category-list-title">Top Categories</h2>
+                         <!-- Back button added dynamically -->
+                    </div>
+                    <div id="category-content">
+                        <!-- Dynamic list/details populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- Feather Icons Init ---
+        feather.replace();
+
+        // --- DOM Elements ---
+        const themeCheckbox = document.getElementById('theme-checkbox');
+        const htmlElement = document.documentElement;
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+        const currentMonthDisplay = document.getElementById('current-month-display');
+        const categoryContent = document.getElementById('category-content');
+        const categoryListTitle = document.getElementById('category-list-title');
+        const totalSpendAmountEl = document.getElementById('total-spend-amount');
+        const expenseChartCanvas = document.getElementById('expense-chart');
+        const graphTitleElement = document.getElementById('graph-title');
+        const listContainerHeader = document.getElementById('list-header');
+        const graphContainerHeader = document.getElementById('graph-header');
+
+        // --- Theme Switcher Logic (FROM EXPENSE TRACKER) ---
+        const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+        if (currentTheme) {
+            htmlElement.setAttribute('data-theme', currentTheme);
+            if (currentTheme === 'light') themeCheckbox.checked = true;
+        } else {
+             htmlElement.setAttribute('data-theme', 'dark'); // Default dark
+        }
+        themeCheckbox.addEventListener('change', function() {
+            const newTheme = this.checked ? 'light' : 'dark';
+            htmlElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            // Re-apply Chart defaults if they depend on theme variables that changed
+            setChartDefaults();
+            // Redraw chart if its colors depend heavily on theme vars (optional, depends on implementation)
+            if (expenseChart) {
+                 updateDashboardUI(monthsOrder[currentMonthIndex]); // Simplest way to redraw with new colors
+            }
+            feather.replace(); // Update icons
+        });
+
+        // --- State (FROM MINISTRIC) ---
+        let expenseChart = null;
+        let currentViewMode = 'monthlyOverview'; // 'monthlyOverview' or 'categoryHistory'
+        let selectedCategoryForHistory = null;
+
+        // --- Helpers, Chart Defaults (Adapted) ---
+        const getCssVarValue = (varName) => getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+        const formatCurrency = (amount) => {
+            const numAmount = Number(amount);
+            if (isNaN(numAmount)) return 'R --.--';
+            // Use ZAR format from Ministric
+            return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numAmount);
+        };
+
+        // --- IMPORTANT: Update Chart defaults to use NEW theme variables ---
+        function setChartDefaults() {
+            try {
+                Chart.defaults.color = getCssVarValue('--text-secondary'); // Use secondary text for less emphasis
+                Chart.defaults.borderColor = getCssVarValue('--border-color');
+                Chart.defaults.font.family = getCssVarValue('--font-family');
+                Chart.defaults.font.size = 11; // Smaller default size
+                // Set grid line color using the theme variable
+                Chart.defaults.scale.grid.color = getCssVarValue('--grid-line-color');
+                Chart.defaults.scale.grid.borderColor = 'transparent'; // Hide axis border itself
+                Chart.defaults.scale.grid.drawBorder = false; // Hide axis border itself
+                 Chart.defaults.scale.ticks.color = getCssVarValue('--text-secondary'); // Tick labels color
+            } catch (e) {
+                console.error("Error setting Chart defaults:", e);
+            }
+        }
+
+        // Keep categoryColors definition using --c1 etc. from Ministric CSS
+        const categoryColors = [
+             { inner: '--c1', outer: '--c1-light' }, { inner: '--c2', outer: '--c2-light' },
+             { inner: '--c3', outer: '--c3-light' }, { inner: '--c4', outer: '--c4-light' },
+             { inner: '--c5', outer: '--c5-light' }, { inner: '--c6', outer: '--c6-light' },
+             { inner: '--c7', outer: '--c7-light' }, { inner: '--c8', outer: '--c8-light' },
+             { inner: '--c9', outer: '--c9-light' }, { inner: '--c10', outer: '--c10-light' }
+        ];
+
+        // --- Demo Data (FROM MINISTRIC - UNCHANGED) ---
+        function generateOctGroceryData(count = 20) { let data = [ { date: "2023-10-04", description: "Woolworths", amount: 1600.00 }, { date: "2023-10-18", description: "Checkers", amount: 2000.00 } ]; let total = 3600.00; for (let i = 1; i <= count; i++) { let day = Math.floor(Math.random() * 28) + 1; let dayStr = day < 10 ? '0' + day : day.toString(); let amount = Math.floor(Math.random() * (350 - 50 + 1)) + 50; let store = ['Pick n Pay', 'Spar', 'Food Lovers', 'Local Butcher', 'Fruit & Veg'][Math.floor(Math.random() * 5)]; data.push({ date: `2023-10-${dayStr}`, description: `${store} #${i}`, amount: amount }); total += amount; } data.sort((a, b) => new Date(a.date) - new Date(b.date)); return { transactions: data, totalAmount: total }; }
+        const octGroceryDetails = generateOctGroceryData(20); const octTotalGrocery = octGroceryDetails.totalAmount; const octOriginalTotal = 15850.00; const octOriginalGrocery = 3600.00; const octNewTotal = octOriginalTotal - octOriginalGrocery + octTotalGrocery;
+        const monthlyData = { /* ... Keep the exact same data structure ... */
+            "March 2023": { total: 13500.00, categories: [ { name: 'Groceries', amount: 3000.00 }, { name: 'Transport', amount: 1800.00 }, { name: 'Rent/Mortgage', amount: 5500.00 }, { name: 'Utilities', amount: 1100.00 }, { name: 'Dining Out', amount: 700.00 }, { name: 'Entertainment', amount: 500.00 }, { name: 'Shopping', amount: 400.00 }, { name: 'Health', amount: 200.00 }, { name: 'Subscriptions', amount: 300.00 }, { name: 'Other', amount: 0.00 } ], details: {} },
+            "April 2023": { total: 14200.50, categories: [ { name: 'Groceries', amount: 3200.50 }, { name: 'Transport', amount: 1900.00 }, { name: 'Rent/Mortgage', amount: 5500.00 }, { name: 'Utilities', amount: 1150.00 }, { name: 'Dining Out', amount: 800.00 }, { name: 'Entertainment', amount: 600.00 }, { name: 'Shopping', amount: 500.00 }, { name: 'Health', amount: 250.00 }, { name: 'Subscriptions', amount: 300.00 }, { name: 'Other', amount: 0.00 } ], details: {} },
+            "May 2023": { total: 14800.00, categories: [ { name: 'Groceries', amount: 3300.00 }, { name: 'Transport', amount: 2000.00 }, { name: 'Rent/Mortgage', amount: 5500.00 }, { name: 'Utilities', amount: 1200.00 }, { name: 'Dining Out', amount: 900.00 }, { name: 'Entertainment', amount: 650.00 }, { name: 'Shopping', amount: 550.00 }, { name: 'Health', amount: 300.00 }, { name: 'Subscriptions', amount: 400.00 }, { name: 'Other', amount: 0.00 } ], details: {} },
+            "June 2023": { total: 15100.75, categories: [ { name: 'Groceries', amount: 3400.75 }, { name: 'Transport', amount: 2100.00 }, { name: 'Rent/Mortgage', amount: 5500.00 }, { name: 'Utilities', amount: 1250.00 }, { name: 'Dining Out', amount: 950.00 }, { name: 'Entertainment', amount: 700.00 }, { name: 'Shopping', amount: 600.00 }, { name: 'Health', amount: 300.00 }, { name: 'Subscriptions', amount: 300.00 }, { name: 'Other', amount: 0.00 } ], details: {} },
+            "July 2023": { total: 15550.20, categories: [ { name: 'Groceries', amount: 3500.20 }, { name: 'Transport', amount: 2200.00 }, { name: 'Rent/Mortgage', amount: 5500.00 }, { name: 'Utilities', amount: 1300.00 }, { name: 'Dining Out', amount: 1000.00 }, { name: 'Entertainment', amount: 750.00 }, { name: 'Shopping', amount: 650.00 }, { name: 'Health', amount: 350.00 }, { name: 'Subscriptions', amount: 300.00 }, { name: 'Other', amount: 0.00 } ], details: {} },
+            "August 2023": { total: 14500.10, categories: [ { name: 'Groceries', amount: 3450.10 }, { name: 'Transport', amount: 2105.50 }, { name: 'Rent/Mortgage', amount: 5500.00 }, { name: 'Utilities', amount: 1230.00 }, { name: 'Dining Out', amount: 980.75 }, { name: 'Entertainment', amount: 750.00 }, { name: 'Shopping', amount: 680.15 }, { name: 'Health', amount: 420.00 }, { name: 'Subscriptions', amount: 310.00 }, { name: 'Other', amount: 450.00 } ], details: { "Groceries": [ { date: "2023-08-05", description: "Woolworths", amount: 1200.00 }, { date: "2023-08-12", description: "Checkers", amount: 850.00 }, { date: "2023-08-19", description: "Pick n Pay", amount: 1400.10 } ], "Transport": [ { date: "2023-08-01", description: "Petrol", amount: 700.00 }, { date: "2023-08-15", description: "Uber", amount: 300.00 }, { date: "2023-08-29", description: "Gautrain", amount: 1105.50 } ], "Rent/Mortgage": [ { date: "2023-08-01", description: "Rent Payment", amount: 5500.00 } ], "Utilities": [ { date: "2023-08-03", description: "Eskom", amount: 730.00 }, { date: "2023-08-04", description: "City Power", amount: 500.00 } ], "Dining Out": [ { date: "2023-08-10", description: "Tashas", amount: 550.00 }, { date: "2023-08-22", description: "Doppio Zero", amount: 430.75 } ], "Entertainment": [ { date: "2023-08-18", description: "Movies", amount: 300.00 }, { date: "2023-08-25", description: "Spotify", amount: 60.00 }, { date: "2023-08-26", description: "Netflix", amount: 190.00 }, { date: "2023-08-28", description: "Showmax", amount: 200.00 }], "Shopping": [ { date: "2023-08-08", description: "Takealot", amount: 680.15 } ], "Health": [ { date: "2023-08-14", description: "Dischem", amount: 420.00 } ], "Subscriptions": [ { date: "2023-08-01", description: "Gym", amount: 310.00 } ], "Other": [ { date: "2023-08-20", description: "Gift", amount: 450.00 } ] } },
+            "September 2023": { total: 16250.50, categories: [ { name: 'Groceries', amount: 3800.00 }, { name: 'Transport', amount: 2300.50 }, { name: 'Rent/Mortgage', amount: 5500.00 }, { name: 'Utilities', amount: 1350.00 }, { name: 'Dining Out', amount: 1100.00 }, { name: 'Entertainment', amount: 800.00 }, { name: 'Shopping', amount: 950.00 }, { name: 'Health', amount: 300.00 }, { name: 'Subscriptions', amount: 150.00 }, { name: 'Other', amount: 800.00 } ], details: { "Groceries": [ { date: "2023-09-06", description: "PnP", amount: 1800.00 }, { date: "2023-09-20", description: "Woolies", amount: 2000.00 } ], "Rent/Mortgage": [ { date: "2023-09-01", description: "Rent Payment", amount: 5500.00 } ], "Shopping": [ { date: "2023-09-15", description: "Superbalist", amount: 950.00 } ] } },
+            "October 2023": { total: octNewTotal, categories: [ { name: 'Groceries', amount: octTotalGrocery }, { name: 'Transport', amount: 2250.00 }, { name: 'Rent/Mortgage', amount: 5500.00 }, { name: 'Utilities', amount: 1300.00 }, { name: 'Dining Out', amount: 1200.00 }, { name: 'Entertainment', amount: 850.00 }, { name: 'Shopping', amount: 750.00 }, { name: 'Health', amount: 250.00 }, { name: 'Subscriptions', amount: 150.00 }, { name: 'Other', amount: 0.00 } ], details: { "Groceries": octGroceryDetails.transactions, "Transport": [ { date: "2023-10-01", description: "Petrol", amount: 900.00 }, { date: "2023-10-15", description: "Uber", amount: 450.00 }, { date: "2023-10-28", description: "Parking", amount: 900.00 } ], "Rent/Mortgage": [ { date: "2023-10-01", description: "Rent Payment", amount: 5500.00 } ], "Dining Out": [ { date: "2023-10-12", description: "Marble", amount: 1200.00 } ], "Entertainment": [ { date: "2023-10-20", description: "Concert Ticket", amount: 850.00 } ] } }
+        };
+        const monthsOrder = Object.keys(monthlyData);
+        let currentMonthIndex = monthsOrder.indexOf("October 2023"); // Default
+
+        // --- Historical Data Function (Adapted - uses opacity var) ---
+        function hexToRGBA(hex, alpha) { /* ... Keep same ... */ hex = hex.replace('#', ''); if (hex.length === 3) { hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2]; } const r = parseInt(hex.substring(0, 2), 16); const g = parseInt(hex.substring(2, 4), 16); const b = parseInt(hex.substring(4, 6), 16); return `rgba(${r}, ${g}, ${b}, ${alpha})`; }
+        function getHistoricalDataForCategory(categoryName, numMonths = 6) { /* ... Keep logic, ensure opacity var is read ... */ const historicalLabels = []; const historicalAmounts = []; const backgroundColors = []; const historyOpacity = parseFloat(getCssVarValue('--history-bar-opacity')) || 0.45; let categoryIndex = -1; for(const monthKey of monthsOrder) { const index = monthlyData[monthKey]?.categories.findIndex(c => c.name === categoryName); if(index !== -1 && index !== undefined) { categoryIndex = index; break; } } if (categoryIndex === -1) categoryIndex = 0; const categoryBaseColorVar = categoryColors[categoryIndex % categoryColors.length].inner; const categoryBaseColorHex = getCssVarValue(categoryBaseColorVar); if (currentMonthIndex < 0 || currentMonthIndex >= monthsOrder.length) { currentMonthIndex = monthsOrder.length - 1; } const startIndex = Math.max(0, currentMonthIndex - numMonths + 1); const currentlySelectedMonthKey = monthsOrder[currentMonthIndex]; for (let i = startIndex; i <= currentMonthIndex; i++) { const monthKey = monthsOrder[i]; const month = monthlyData[monthKey]; historicalLabels.push(monthKey.substring(0, 3)); const categoryData = month?.categories.find(cat => cat.name === categoryName); historicalAmounts.push(categoryData ? categoryData.amount : 0); if (monthKey === currentlySelectedMonthKey) { backgroundColors.push(categoryBaseColorHex); } else { backgroundColors.push(hexToRGBA(categoryBaseColorHex, historyOpacity)); } } historicalLabels.reverse(); historicalAmounts.reverse(); backgroundColors.reverse(); return { labels: historicalLabels, datasets: [{ label: categoryName, data: historicalAmounts, backgroundColor: backgroundColors, borderWidth: 0, borderRadius: 4, barPercentage: 0.6, categoryPercentage: 0.7 }] }; }
+
+
+        // --- Chart Creation (Adapted Styling) ---
+        function handleChartClick(event, elements, chart) { /* ... Keep same logic ... */ if (elements.length > 0 && currentViewMode === 'monthlyOverview') { const elementIndex = elements[0].index; const categoryName = chart.data.labels[elementIndex]; if (categoryName) { switchToCategoryDetailView(categoryName); } } }
+        function createOrUpdateChart(chartData, viewType = 'monthlyOverview') {
+            const ctx = expenseChartCanvas.getContext('2d');
+            // Use NEW theme variables for colors
+            const textColorPrimary = getCssVarValue('--text-primary');
+            const textColorSecondary = getCssVarValue('--text-secondary');
+            const gridColor = getCssVarValue('--grid-line-color'); // Use theme variable
+            let data, options;
+
+            const baseChartOptions = {
+                 responsive: true,
+                 maintainAspectRatio: false,
+                 scales: {
+                     x: {
+                         ticks: { color: textColorSecondary, font: { size: 10 }, padding: 5 }, // Smaller ticks
+                         grid: { color: gridColor, drawTicks: false, borderDash: [3, 3], drawBorder: false },
+                         border: { display: false },
+                         title: { display: true, text: 'Amount (R)', color: textColorSecondary, font: {size: 9, weight: '500'}, padding: {top: 5}} // Smaller title
+                     },
+                     y: {
+                         ticks: { color: textColorPrimary, font: { size: 11, weight: 500 }, padding: 8 }, // Slightly smaller ticks
+                         grid: { display: false }, // Hide Y grid lines for cleaner look
+                         border: { display: false },
+                         title: { display: false }
+                     }
+                 },
+                 plugins: {
+                     legend: { display: false },
+                     tooltip: {
+                          enabled: false, // Disable default, use external
+                          external: externalTooltipHandler
+                     }
+                 },
+                 layout: { padding: { top: 5, bottom: 0, left: 0, right: 10 } } // Adjust padding
+            };
+
+            if (viewType === 'categoryHistory') {
+                data = chartData; // Already formatted by getHistoricalDataForCategory
+                options = {
+                    ...baseChartOptions,
+                    indexAxis: 'y', // Keep horizontal bars for history
+                    scales: { // Override scales slightly for history
+                        x: { ...baseChartOptions.scales.x, suggestedMax: Math.max(...data.datasets[0].data) * 1.15 },
+                        y: { ...baseChartOptions.scales.y, ticks: {...baseChartOptions.scales.y.ticks, font: { size: 10, weight: 500 } } } // Even smaller labels for history months
+                    },
+                    onClick: null // No click action on history chart
+                };
+            } else { // monthlyOverview
+                const sortedCategories = [...chartData.categories].sort((a, b) => b.amount - a.amount);
+                const backgroundColors = sortedCategories.map((category) => {
+                    const originalIndex = chartData.categories.findIndex(c => c.name === category.name);
+                    // Use the --c1, --c2 variables directly
+                    return getCssVarValue(categoryColors[originalIndex % categoryColors.length].inner);
+                });
+                data = {
+                    labels: sortedCategories.map(cat => cat.name),
+                    datasets: [{
+                        data: sortedCategories.map(cat => cat.amount),
+                        backgroundColor: backgroundColors,
+                        borderWidth: 0,
+                        borderRadius: 4, // Slightly rounded bars
+                        barPercentage: 0.7, // Adjust bar thickness
+                        categoryPercentage: 0.7 // Adjust space between bars
+                    }]
+                };
+                 options = {
+                     ...baseChartOptions,
+                     indexAxis: 'y', // Keep horizontal bars
+                     scales: { // Override scales slightly for overview
+                         x: { ...baseChartOptions.scales.x, suggestedMax: Math.max(...sortedCategories.map(c=>c.amount)) * 1.1 },
+                         y: { ...baseChartOptions.scales.y, ticks: {...baseChartOptions.scales.y.ticks, font: { size: 11, weight: 500 } } }
+                     },
+                     onClick: handleChartClick // Enable click for overview
+                 };
+            }
+
+            if (expenseChart) { expenseChart.destroy(); }
+            expenseChart = new Chart(ctx, { type: 'bar', data: data, options: options });
+        }
+
+        // --- Custom Tooltip (Adapted Style) ---
+        const getOrCreateTooltip = (chart) => { /* ... Keep same logic ... */ let tooltipEl = chart.canvas.parentNode.querySelector('div.chartjs-tooltip'); if (!tooltipEl) { tooltipEl = document.createElement('div'); tooltipEl.classList.add('chartjs-tooltip'); /* CSS sets style */ const table = document.createElement('table'); table.style.margin = '0px'; tooltipEl.appendChild(table); chart.canvas.parentNode.appendChild(tooltipEl); } return tooltipEl; };
+        const externalTooltipHandler = (context) => { const {chart, tooltip} = context; const tooltipEl = getOrCreateTooltip(chart); if (tooltip.opacity === 0) { tooltipEl.style.opacity = 0; return; } tooltipEl.classList.remove('above', 'below', 'no-transform'); if (tooltip.yAlign) { tooltipEl.classList.add(tooltip.yAlign); } else { tooltipEl.classList.add('no-transform'); } if (tooltip.body) { const titleLines = tooltip.title || []; const bodyLines = tooltip.body.map(b => b.lines); const tableHead = document.createElement('thead'); titleLines.forEach(title => { const tr = document.createElement('tr'); const th = document.createElement('th'); /* CSS sets style */ th.appendChild(document.createTextNode(title)); tr.appendChild(th); tableHead.appendChild(tr); }); const tableBody = document.createElement('tbody'); bodyLines.forEach((body, i) => { const colors = tooltip.labelColors[i]; const span = document.createElement('span'); span.classList.add('tooltip-swatch'); span.style.background = colors.backgroundColor; span.style.borderColor = colors.borderColor; /* CSS sets rest */ const tr = document.createElement('tr'); const td = document.createElement('td'); /* CSS sets style */ let amount = 0; if (tooltip.dataPoints[0]?.parsed?.x !== undefined && tooltip.dataPoints[0]?.parsed?.y !== undefined) { amount = chart.options.indexAxis === 'y' ? tooltip.dataPoints[0].parsed.x : tooltip.dataPoints[0].parsed.y; } td.appendChild(span); td.appendChild(document.createTextNode(formatCurrency(amount))); tr.appendChild(td); tableBody.appendChild(tr); }); const tableRoot = tooltipEl.querySelector('table'); while (tableRoot.firstChild) { tableRoot.firstChild.remove(); } tableRoot.appendChild(tableHead); tableRoot.appendChild(tableBody); } const {offsetLeft: positionX, offsetTop: positionY} = chart.canvas; tooltipEl.style.opacity = 1; tooltipEl.style.left = positionX + tooltip.caretX + 'px'; tooltipEl.style.top = positionY + tooltip.caretY + 'px'; /* CSS sets padding */ tooltipEl.style.transform = 'translate(-50%, -110%)'; /* Adjust position slightly */};
+
+        // --- UI Updates (Ministric Logic, Adapted Structure/Classes) ---
+        function displayCategoryList(chartData) {
+            categoryListTitle.textContent = "Top Categories";
+            let listHTML = `<ul class="category-list" id="category-list-ul">`; // Use the class from new CSS
+            const sortedCategories = [...chartData.categories].sort((a, b) => b.amount - a.amount);
+
+            sortedCategories.forEach((category) => {
+                if (category.amount <= 0 && category.name !== 'Other') return; // Skip empty unless 'Other'
+                const originalIndex = chartData.categories.findIndex(c => c.name === category.name);
+                const colorPair = categoryColors[originalIndex % categoryColors.length];
+                // Use dot-container structure from new CSS
+                listHTML += `
+                    <li class="category-item" data-category="${category.name}">
+                        <span class="dot-container" style="--inner-color: var(${colorPair.inner}); --outer-color: var(${colorPair.outer});"></span>
+                        <span class="category-name">${category.name}</span>
+                        <span class="category-amount">${formatCurrency(category.amount)}</span>
+                    </li>`;
+            });
+            listHTML += `</ul>`;
+            categoryContent.innerHTML = listHTML;
+
+            // Re-attach listener to the new list
+            const newListElement = document.getElementById('category-list-ul');
+            if (newListElement) {
+                newListElement.addEventListener('click', handleCategoryListItemClick);
+            }
+        }
+
+        function displayCategoryDetails(categoryName, detailsData) {
+            categoryListTitle.textContent = categoryName; // Update title
+            const expenses = detailsData[categoryName] || [];
+            let total = expenses.reduce((sum, item) => sum + item.amount, 0);
+
+            // Add back button using helper
+            addBackButton(listContainerHeader, 'back-to-list-header');
+
+            let transactionsHTML = '';
+            if (expenses.length > 0) {
+                 // Sort transactions by date descending for realism in details view
+                 expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+                 expenses.forEach(item => {
+                     // Format date slightly better for details
+                     const displayDate = new Date(item.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                     transactionsHTML += `
+                         <div class="transaction-list-item">
+                             <div class="transaction-details">
+                                 <span class="transaction-description">${item.description}</span>
+                                 <span class="transaction-date">${displayDate}</span>
+                             </div>
+                             <span class="transaction-amount">${formatCurrency(item.amount)}</span>
+                         </div>`;
+                 });
+            }
+
+            // Use the new structure with scroll wrapper and total row
+            let detailsHTML = `
+                <div class="category-details">
+                    <div class="transactions-scroll-wrapper">
+                        ${expenses.length > 0 ? transactionsHTML : `<p class="no-expenses-message">No expenses recorded for ${categoryName} this month.</p>`}
+                    </div>
+                    ${expenses.length > 0 ? `<div class="details-total-row"><span>Total</span><span>${formatCurrency(total)}</span></div>` : ''}
+                </div>`;
+
+            categoryContent.innerHTML = detailsHTML;
+        }
+
+        // --- Back Button Helpers (Adapted) ---
+        function addBackButton(headerElement, buttonId) {
+            const existingButton = headerElement.querySelector(`#${buttonId}`);
+            if (existingButton) existingButton.remove(); // Prevent duplicates
+
+            const backButton = document.createElement('button');
+            backButton.id = buttonId;
+            backButton.className = 'back-button-header'; // Use the styled class
+            backButton.innerHTML = `<i data-feather="arrow-left"></i>Back`; // Add icon
+            backButton.addEventListener('click', () => {
+                // Reset view state and update UI
+                currentViewMode = 'monthlyOverview';
+                selectedCategoryForHistory = null;
+                updateDashboardUI(monthsOrder[currentMonthIndex]);
+            });
+
+            // Append button (consider appending before title or after controls)
+            // Inserting before the title might look better
+            headerElement.insertBefore(backButton, headerElement.firstChild.nextSibling); // Insert after title
+            feather.replace(); // IMPORTANT: Redraw icon
+        }
+
+        function removeBackButton(headerElement, buttonId) {
+            const button = headerElement.querySelector(`#${buttonId}`);
+            if (button) button.remove();
+        }
+
+        // --- Event Handlers (Ministric Logic) ---
+        function switchToCategoryDetailView(categoryName) {
+            const currentMonthKey = monthsOrder[currentMonthIndex];
+            currentViewMode = 'categoryHistory'; // Set mode for chart update logic
+            selectedCategoryForHistory = categoryName; // Store selected category
+
+            if (monthlyData[currentMonthKey]?.details) {
+                displayCategoryDetails(categoryName, monthlyData[currentMonthKey].details);
+            } else {
+                // Handle case where details might be missing
+                console.warn("Details data missing for", categoryName, "in", currentMonthKey);
+                categoryContent.innerHTML = `<div class="category-details"><p class="no-expenses-message">Details not available for ${categoryName} this month.</p></div>`;
+                addBackButton(listContainerHeader, 'back-to-list-header'); // Still add back button
+            }
+            // Add back button to graph header as well
+            addBackButton(graphContainerHeader, 'back-to-graph-header');
+            // Update the graph to show history
+            updateGraphForHistory(categoryName);
+        }
+
+        function handleCategoryListItemClick(event) {
+            const categoryItem = event.target.closest('.category-item'); // Use correct selector
+            if (categoryItem) {
+                const category = categoryItem.dataset.category;
+                switchToCategoryDetailView(category);
+            }
+        }
+
+        prevMonthBtn.addEventListener('click', () => {
+            if (currentMonthIndex > 0) {
+                currentMonthIndex--;
+                updateDashboardUI(monthsOrder[currentMonthIndex]);
+            }
+        });
+        nextMonthBtn.addEventListener('click', () => {
+            if (currentMonthIndex < monthsOrder.length - 1) {
+                currentMonthIndex++;
+                updateDashboardUI(monthsOrder[currentMonthIndex]);
+            }
+        });
+
+        // --- Core Update Functions (Ministric Logic) ---
+        function updateGraphForHistory(categoryName) {
+            const historyData = getHistoricalDataForCategory(categoryName, 6); // Get last 6 months
+            graphTitleElement.textContent = `${categoryName} Trend (Last ${historyData.labels.length} Months)`; // Update title
+            createOrUpdateChart(historyData, 'categoryHistory'); // Create history chart
+        }
+
+        function updateDashboardUI(monthKey) {
+            const data = monthlyData[monthKey];
+            if (!data) {
+                console.error("No data for month:", monthKey);
+                return;
+            }
+
+            // Update header info
+            currentMonthDisplay.textContent = monthKey;
+            totalSpendAmountEl.textContent = formatCurrency(data.total);
+
+            // Reset titles and remove back buttons for overview
+            graphTitleElement.textContent = "Spending by Category";
+            categoryListTitle.textContent = "Top Categories";
+            removeBackButton(listContainerHeader, 'back-to-list-header');
+            removeBackButton(graphContainerHeader, 'back-to-graph-header');
+
+            // Reset view state
+            currentViewMode = 'monthlyOverview';
+            selectedCategoryForHistory = null;
+
+            // Update Chart (use requestAnimationFrame for potentially smoother render)
+            requestAnimationFrame(() => {
+                 createOrUpdateChart(data, 'monthlyOverview');
+            });
+
+            // Update Category List
+            displayCategoryList(data);
+
+             // Ensure icons are up-to-date after potential removals/additions
+             feather.replace();
+        }
+
+        // --- Initialize ---
+        document.addEventListener('DOMContentLoaded', () => {
+            setChartDefaults(); // Set chart styles based on theme
+            if (currentMonthIndex < 0 || currentMonthIndex >= monthsOrder.length) {
+                 currentMonthIndex = monthsOrder.length - 1; // Ensure valid index
+            }
+            updateDashboardUI(monthsOrder[currentMonthIndex]); // Initial load
+            feather.replace(); // Initial icon render
+        });
+
+    </script>
+
+</body>
+</html>
