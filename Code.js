@@ -201,6 +201,14 @@ function getDataForDashboard() {
       delete cycleData.categoriesMap; // Cleanup temporary map from cycleData
     } // End Final Formatting Loop
 
+        // Explicitly remove Transfer details before sending to client
+    for (const cycleKey in processedData) {
+        if (processedData[cycleKey] && processedData[cycleKey].details && processedData[cycleKey].details[TRANSFER_CATEGORY_NAME]) {
+             // Logger.log(`Removing transfer details for cycle: ${cycleKey}`); // Optional: for debugging
+             delete processedData[cycleKey].details[TRANSFER_CATEGORY_NAME];
+        }
+    }
+
     // Logger.log("Processed Data: " + JSON.stringify(processedData, null, 2));
     return processedData;
 

@@ -490,13 +490,10 @@
         const listContainerHeader = document.getElementById('list-header');
         const graphContainerHeader = document.getElementById('graph-header');
         const chartWrapperElement = document.querySelector('.chart-wrapper');
-
-        // --- DOM Elements ---
-        // ... (keep existing element selections)
         const sidebar = document.querySelector('.sidebar'); // Add if not already present
         const toggleButton = document.getElementById('sidebar-toggle-button');
         const bodyElement = document.body;
-        // ... (rest of existing element selections)
+
 
         // --- Sidebar Toggle Logic ---
         const toggleIcon = toggleButton ? toggleButton.querySelector('svg.feather') : null;
@@ -528,6 +525,76 @@
                  }, 350);
              }
         }
+
+
+        // --- Fixed Category Mapping ---
+        const categoryMappings = {
+            // Top 9 Expense Categories + Uncategorised
+            'Rent':               { colorVar: '--c1',  iconName: 'home' },
+            'Groceries':          { colorVar: '--c2',  iconName: 'shopping-cart' },
+            'Fuel':               { colorVar: '--c3',  iconName: 'truck' },
+            'Restaurants':        { colorVar: '--c4',  iconName: 'coffee' },
+            'Donations':          { colorVar: '--c5',  iconName: 'gift' },
+            'Clothing & Shoes':   { colorVar: '--c6',  iconName: 'shopping-bag' },
+            'Takeaways':          { colorVar: '--c7',  iconName: 'package' },
+            'Cellphone':          { colorVar: '--c8',  iconName: 'smartphone' },
+            'Personal Care':      { colorVar: '--c9',  iconName: 'smile' }, // Added
+            'Uncategorised':      { colorVar: '--c10', iconName: 'tag' },
+
+            // Definition for the grouped "Other Expenses" category
+            'Other Expenses':     { colorVar: '--text-tertiary', iconName: 'tag' },
+
+            // Fallback for any category somehow missed
+            '__DEFAULT__':        { colorVar: '--text-tertiary', iconName: 'tag' }
+        };
+        // --- End Fixed Category Mapping ---
+
+
+        // --- Icon Mapping (ORIGINAL - Ensure it includes fallbacks) ---
+        const categoryIconMap = {
+            // --- YOUR ORIGINAL ICONS ---
+            'Groceries': 'shopping-cart', 'Rent': 'home', 'Uncategorised': 'tag',
+            'Fuel': 'truck', 'Takeaways': 'package', 'Restaurants': 'coffee',
+            'Licence': 'file-text', 'Sport & Hobbies': 'activity', 'Cellphone': 'smartphone',
+            'Donations': 'gift', 'Clothing & Shoes': 'shopping-bag', 'Other Transport': 'navigation',
+            'Tithing': 'gift',
+            // --- ADD/ENSURE FALLBACK ICONS ARE PRESENT HERE ---
+            'Personal Care': 'smile',
+            'Public Transport': 'navigation', // Or 'compass' etc.
+            'Online Store': 'globe',
+            'Pharmacy': 'heart',
+            'Alcohol': 'coffee', // Or 'droplet'
+            'Doctors & Therapists': 'activity', // Or 'first-aid'
+            'Life Insurance': 'shield',
+            'Vehicle Maintenance': 'tool',
+            // --- Keep the Default ---
+            'Default': 'tag'
+        };
+        // --- End Icon Mapping ---
+
+
+        // --- MODIFIED Icon Helper ---
+        // Now prioritizes the fixed mapping
+        function getIconNameForCategory(categoryName) {
+            // 1. Check primary mapping first
+            const mapping = categoryMappings[categoryName];
+            if (mapping && mapping.iconName) {
+                return mapping.iconName;
+            }
+
+            // 2. Fallback to the original categoryIconMap if not in primary
+            const lowerCaseName = categoryName?.toLowerCase() || 'default';
+            for (const key in categoryIconMap) {
+                if (key.toLowerCase() === lowerCaseName) {
+                    // Ensure we don't return undefined if the key exists but value is missing
+                    return categoryIconMap[key] || categoryMappings['__DEFAULT__'].iconName || 'tag';
+                }
+            }
+
+            // 3. Final fallback using the default from categoryMappings
+            return categoryMappings['__DEFAULT__'].iconName || 'tag';
+        }
+        // --- End Icon Helper ---
 
         function initializeSidebar() {
             if (!toggleButton) return; // Don't run if button doesn't exist
@@ -629,11 +696,6 @@
              return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
 
-        // --- Icon Mapping ---
-        const categoryIconMap = {
-            'Groceries': 'shopping-cart', 'Rent': 'home', 'Uncategorised': 'tag', 'Fuel': 'truck', 'Takeaways': 'package', 'Restaurants': 'coffee', 'Licence': 'file-text', 'Sport & Hobbies': 'activity', 'Cellphone': 'smartphone', 'Donations': 'gift', 'Clothing & Shoes': 'shopping-bag', 'Other Transport': 'navigation', 'Tithing': 'gift', // Added Tithing example
-            'Default': 'tag' // Fallback icon
-        };
         function getIconNameForCategory(categoryName) {
             // Handle null or undefined categoryName gracefully
             const lowerCaseName = categoryName?.toLowerCase() || 'default';
@@ -659,142 +721,178 @@
          * @returns {object} Chart.js data object { labels, datasets, fullKeys }.
          */
         function getHistoricalDataForCategory(categoryName, numMonths = 10) {
-             const historicalLabels = []; // Will hold short labels like "Apr 22"
-             const historicalAmounts = [];
-             const backgroundColors = [];
-             const fullMonthKeys = []; // Will hold full cycle keys like "2024-04-22_to_2024-05-21"
-             const historyOpacity = parseFloat(getCssVarValue('--history-bar-opacity')) || 0.45;
+            const historicalLabels = [];
+            const historicalAmounts = [];
+            const backgroundColors = [];
+            const fullMonthKeys = [];
+            const historyOpacity = parseFloat(getCssVarValue('--history-bar-opacity')) || 0.45;
 
-             // Check if data is loaded and we have a valid index
-             if (!monthKeys.length || currentMonthIndex < 0 || !dashboardData) {
-                  console.warn("getHistoricalDataForCategory called before data ready or no monthKeys.");
-                  return { labels: [], datasets: [], fullKeys: [] };
-             }
+            if (!monthKeys.length || currentMonthIndex < 0 || !dashboardData) {
+                console.warn("getHistoricalDataForCategory called before data ready or no monthKeys.");
+                return { labels: [], datasets: [], fullKeys: [] };
+            }
 
-             // Find base color (improved logic for "Other")
-             let categoryIndexInCurrentMonth = -1;
-             const currentCycleKey = monthKeys[currentMonthIndex];
-             let currentCycleCategories = dashboardData[currentCycleKey]?.categories;
+            // --- Get Fixed Color ---
+            let categoryBaseColorVar;
+            let categoryHighlightColorHex;
 
-             if (currentCycleCategories) {
-                 if (categoryName === "Other") {
-                     // Find index of "Other" if it exists, otherwise use last color index
-                     const otherIndex = currentCycleCategories.findIndex(c => c.name === "Other");
-                     categoryIndexInCurrentMonth = otherIndex !== -1 ? otherIndex : categoryColors.length - 1; // Fallback to last color index
-                 } else {
-                     categoryIndexInCurrentMonth = currentCycleCategories.findIndex(c => c.name === categoryName);
-                 }
-             }
-             // If still not found (e.g., category exists historically but not in current cycle's top N), use fallback
-             if (categoryIndexInCurrentMonth === -1) {
-                 categoryIndexInCurrentMonth = categoryColors.length - 1; // Use the 'Other' color index as fallback
-             }
+            const mapping = categoryMappings[categoryName] || categoryMappings['__DEFAULT__']; // Use mapping or default
+            categoryBaseColorVar = mapping.colorVar;
+            categoryHighlightColorHex = getCssVarValue(categoryBaseColorVar); // Get the hex value for highlight
 
-             // Ensure categoryIndexInCurrentMonth is within bounds of categoryColors
-             categoryIndexInCurrentMonth = categoryIndexInCurrentMonth % categoryColors.length;
-
-             const categoryBaseColorVar = categoryColors[categoryIndexInCurrentMonth]?.inner;
-             if (!categoryBaseColorVar) {
-                 console.error("Could not determine base color variable for category:", categoryName, "Index:", categoryIndexInCurrentMonth);
-                 return { labels: [], datasets: [], fullKeys: [] }; // Cannot proceed without color
-             }
-             const categoryBaseColorHex = getCssVarValue(categoryBaseColorVar);
-             if (!categoryBaseColorHex) {
-                console.error("Could not get CSS hex value for variable:", categoryBaseColorVar);
-                return { labels: [], datasets: [], fullKeys: [] }; // Cannot proceed without color
-             }
+            if (!categoryBaseColorVar || !categoryHighlightColorHex) {
+                 console.error(`Could not determine base color variable/hex for category: ${categoryName}. Var: ${categoryBaseColorVar}, Hex: ${categoryHighlightColorHex}`);
+                 // Fallback to accent color if lookup fails
+                 categoryBaseColorVar = '--accent';
+                 categoryHighlightColorHex = getCssVarValue(categoryBaseColorVar) || '#00BFA6';
+            }
+            // --- End Get Fixed Color ---
 
 
-             const startIndex = Math.max(0, currentMonthIndex - numMonths + 1);
+            const startIndex = Math.max(0, currentMonthIndex - numMonths + 1);
+            let tempLabels = [], tempAmounts = [], tempColors = [], tempFullKeys = [];
 
-             // Use temporary arrays to build data in chronological order before reversing
-             let tempLabels = [], tempAmounts = [], tempColors = [], tempFullKeys = [];
+            for (let i = startIndex; i <= currentMonthIndex; i++) {
+                const cycleKey = monthKeys[i];
+                const cycleData = dashboardData[cycleKey];
 
-             for (let i = startIndex; i <= currentMonthIndex; i++) {
-                 const cycleKey = monthKeys[i]; // Get the raw cycle key (e.g., "2024-04-22_to_2024-05-21")
-                 const cycleData = dashboardData[cycleKey]; // Get data for this specific cycle
+                if (!cycleData || !cycleData.details) {
+                    console.warn(`Skipping historical data for cycle key (no data): ${cycleKey}`);
+                    continue;
+                }
 
-                 // Skip if cycleData or essential details are missing
-                 if (!cycleData || !cycleData.details) {
-                      console.warn(`Skipping historical data for cycle key (no data): ${cycleKey}`);
-                      continue;
-                 }
+                // Generate short label (no change here)
+                try {
+                   const startDateStr = cycleKey.split('_to_')[0];
+                   const startDate = new Date(startDateStr + 'T00:00:00Z');
+                   if (isNaN(startDate.getTime())) throw new Error("Invalid start date parsed");
+                   const startMonthShort = startDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+                   const startDayShort = startDate.getUTCDate();
+                   tempLabels.push(`${startMonthShort} ${startDayShort}`);
+                } catch (e) {
+                   console.error(`Error parsing start date from cycle key: ${cycleKey}`, e);
+                   tempLabels.push(cycleKey.substring(5, 10));
+                }
+                tempFullKeys.push(cycleKey);
 
-                 // --- Generate a shorter label for the chart axis from the cycle key ---
-                 try {
-                    const startDateStr = cycleKey.split('_to_')[0]; // Get "YYYY-MM-DD" part
-                    const startDate = new Date(startDateStr + 'T00:00:00Z'); // Treat as UTC
-                    if (isNaN(startDate.getTime())) throw new Error("Invalid start date parsed");
+                // --- Calculate amount (Handles "Other Expenses" now) ---
+                let categoryDataAmount = 0;
+                const detailKeysForCycle = Object.keys(cycleData.details || {});
 
-                    const startMonthShort = startDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
-                    const startDayShort = startDate.getUTCDate();
-                    tempLabels.push(`${startMonthShort} ${startDayShort}`); // e.g., "Apr 22"
-                 } catch (e) {
-                    console.error(`Error parsing start date from cycle key: ${cycleKey}`, e);
-                    // Fallback: Use a simple slice as a last resort
-                    tempLabels.push(cycleKey.substring(5, 10)); // "MM-DD" from start date
-                 }
-                 // --- End Label Generation ---
+                if (categoryName === "Other Expenses") {
+                     // Find keys NOT in our primary mapping (excluding '__DEFAULT__' and 'Other Expenses' itself)
+                     const mappedKeys = Object.keys(categoryMappings).filter(k => k !== '__DEFAULT__' && k !== 'Other Expenses');
+                     const otherKeysInCycle = detailKeysForCycle.filter(k => !mappedKeys.includes(k));
 
-                 tempFullKeys.push(cycleKey); // Store the full raw key for click handling
-
-                 // --- Calculate amount for the specific category in this historical cycle ---
-                 let categoryDataAmount = 0;
-                 if (categoryName === "Other") {
-                      // Calculate "Other" total for this historical cycle
-                      const displayedCatsHist = cycleData.categories || [];
-                      const topCatsHistNames = displayedCatsHist.map(c => c.name).filter(n => n !== "Other");
-                      const allDetailKeysHist = Object.keys(cycleData.details || {});
-                      const otherKeysHist = allDetailKeysHist.filter(k => !topCatsHistNames.includes(k));
-
-                      otherKeysHist.forEach(key => {
-                         // Sum amounts for transactions under this 'other' key
+                     otherKeysInCycle.forEach(key => {
                          categoryDataAmount += (cycleData.details[key] || []).reduce((sum, item) => {
                              const amount = Number(item.amount);
                              return sum + (isNaN(amount) ? 0 : amount);
-                          }, 0);
-                      });
-                 } else {
-                     // Get data for a specific category (non-"Other")
-                     categoryDataAmount = (cycleData.details[categoryName] || []).reduce((sum, item) => {
-                         const amount = Number(item.amount);
-                         return sum + (isNaN(amount) ? 0 : amount);
-                      }, 0);
-                 }
-                 // --- End Amount Calculation ---
+                         }, 0);
+                     });
+                } else {
+                    // Standard category lookup
+                    categoryDataAmount = (cycleData.details[categoryName] || []).reduce((sum, item) => {
+                        const amount = Number(item.amount);
+                        return sum + (isNaN(amount) ? 0 : amount);
+                    }, 0);
+                }
+                // --- End Amount Calculation ---
 
-                 tempAmounts.push(categoryDataAmount);
-                 tempColors.push(hexToRGBA(categoryBaseColorHex, historyOpacity)); // Use consistent base color with opacity
-             } // End loop through historical cycles
+                tempAmounts.push(categoryDataAmount);
+                // Use the fixed color hex with opacity
+                tempColors.push(hexToRGBA(categoryHighlightColorHex, historyOpacity));
+            } // End loop
 
-             // Reverse arrays for chart display (most recent cycle bar will be at the top/start of y-axis)
-             historicalLabels.push(...tempLabels.reverse());
-             historicalAmounts.push(...tempAmounts.reverse());
-             backgroundColors.push(...tempColors.reverse());
-             fullMonthKeys.push(...tempFullKeys.reverse());
+            historicalLabels.push(...tempLabels.reverse());
+            historicalAmounts.push(...tempAmounts.reverse());
+            backgroundColors.push(...tempColors.reverse());
+            fullMonthKeys.push(...tempFullKeys.reverse());
 
-             // Ensure we have some data, even if it's all zeros, to avoid chart errors
-             if (historicalLabels.length === 0) {
-                 console.log("No historical data found for category:", categoryName);
-                 // Optionally return a placeholder structure or empty data
-                 // return { labels: [], datasets: [], fullKeys: [] };
-             }
+            return {
+                labels: historicalLabels,
+                datasets: [{
+                    label: categoryName,
+                    data: historicalAmounts,
+                    backgroundColor: backgroundColors.slice(), // Use processed colors
+                    borderWidth: 0,
+                    borderRadius: 4,
+                    originalColors: backgroundColors.slice(), // Store the non-highlighted colors
+                    highlightColor: categoryHighlightColorHex // Store the solid FIXED color
+                }],
+                fullKeys: fullMonthKeys
+            };
+        } // --- End of getHistoricalDataForCategory ---
 
-             return {
-                 labels: historicalLabels, // The short axis labels (e.g., "Apr 22")
-                 datasets: [{
-                     label: categoryName, // Keep category name as dataset label
-                     data: historicalAmounts,
-                     backgroundColor: backgroundColors.slice(), // Use processed colors
-                     borderWidth: 0,
-                     borderRadius: 4,
-                     // barPercentage/categoryPercentage set in createOrUpdateChart options
-                     originalColors: backgroundColors.slice(), // Store the non-highlighted colors
-                     highlightColor: categoryBaseColorHex // Store the solid base color for highlighting
-                 }],
-                 fullKeys: fullMonthKeys // The raw cycle keys for click handling
-             };
-         } // --- End of getHistoricalDataForCategory ---
+
+        // --- Process Data for Display (Using Fixed Mappings) ---
+        function processCycleDataForDisplay(cycleData, mappings) {
+            const displayCategories = [];
+            let otherExpensesTotal = 0;
+            const otherContributingKeys = []; // Store keys that make up "Other Expenses"
+            const mappedKeys = Object.keys(mappings).filter(k => k !== '__DEFAULT__' && k !== 'Other Expenses');
+            const detailKeysInCycle = cycleData?.details ? Object.keys(cycleData.details) : [];
+            const processedKeys = new Set(); // Keep track of keys we've handled
+
+            // 1. Process Mapped Categories
+            mappedKeys.forEach(categoryName => {
+                if (detailKeysInCycle.includes(categoryName)) {
+                    const transactions = cycleData.details[categoryName] || [];
+                    const totalAmount = transactions.reduce((sum, item) => {
+                        const amount = Number(item.amount);
+                        return sum + (isNaN(amount) ? 0 : amount);
+                    }, 0);
+
+                    if (totalAmount > 0) { // Only add if there's spending
+                         const mapping = mappings[categoryName];
+                         displayCategories.push({
+                             name: categoryName,
+                             amount: totalAmount,
+                             colorVar: mapping.colorVar,
+                             iconName: mapping.iconName
+                         });
+                    }
+                    processedKeys.add(categoryName); // Mark as processed
+                }
+            });
+
+            // 2. Process Remaining Categories into "Other Expenses"
+            detailKeysInCycle.forEach(key => {
+                if (!processedKeys.has(key)) { // If not already processed as a mapped category
+                    const transactions = cycleData.details[key] || [];
+                    const totalAmount = transactions.reduce((sum, item) => {
+                        const amount = Number(item.amount);
+                        return sum + (isNaN(amount) ? 0 : amount);
+                    }, 0);
+
+                    if (totalAmount > 0) {
+                        otherExpensesTotal += totalAmount;
+                        otherContributingKeys.push(key); // Track which categories contribute
+                    }
+                }
+            });
+
+            // 3. Add "Other Expenses" category if it has value
+            if (otherExpensesTotal > 0) {
+                const otherMapping = mappings['Other Expenses'];
+                displayCategories.push({
+                    name: 'Other Expenses',
+                    amount: otherExpensesTotal,
+                    colorVar: otherMapping.colorVar,
+                    iconName: otherMapping.iconName
+                });
+            }
+
+            // 4. Sort by amount for display order
+            displayCategories.sort((a, b) => b.amount - a.amount);
+
+            // 5. Return processed data
+            return {
+                 displayCategories: displayCategories, // Categories ready for chart/list
+                 otherContributingKeys: otherContributingKeys // Keys grouped into 'Other Expenses'
+            };
+        }
+        // --- End Process Data for Display ---
 
 
         // --- Chart ---
@@ -880,25 +978,55 @@
                      expenseChart.highlightColor = dataset.highlightColor || getCssVarValue('--accent');
                  }
 
-             } else { // Monthly Overview (now Cycle Overview)
-                 const categories = chartDataInput.categories || [];
-                 if (categories.length === 0) {
+             // --- Inside createOrUpdateChart function ---
+
+             } else { // Monthly Overview (now Cycle Overview) - Uses Processed Data
+                 const categoriesForChart = chartDataInput; // chartDataInput IS the processed array now
+                 console.log(">>> createOrUpdateChart (Overview) received:", categoriesForChart); // <-- ADDED LOG
+
+                 if (!categoriesForChart || categoriesForChart.length === 0) {
+                      // Display message inside the chart wrapper if no categories
                       chartWrapperElement.innerHTML = `<p class="no-expenses-message">No spending data for this period.</p>`;
-                      return; // Exit if no categories
+                      // Also clear the category list side
+                      if (categoryContent) { // Ensure categoryContent exists
+                           categoryContent.innerHTML = `<p class="no-expenses-message">No spending categories found for this period.</p>`;
+                      }
+                      return; // Exit if no categories after processing
                  }
 
-                 const backgroundColors = categories.map((category, index) => getCssVarValue(categoryColors[index % categoryColors.length].inner));
-                 const amounts = categories.map(cat => cat.amount);
-                 const maxAmount = amounts.length > 0 ? Math.max(...amounts.filter(v => !isNaN(v))) : 100;
+                 // Ensure the canvas exists if we are proceeding
+                 if (!chartWrapperElement.querySelector('#expense-chart')) {
+                      const canvas = document.createElement('canvas');
+                      canvas.id = 'expense-chart';
+                      chartWrapperElement.innerHTML = ''; // Clear any previous message
+                      chartWrapperElement.appendChild(canvas);
+                      ctx = canvas.getContext('2d'); // Get new context if canvas was recreated
+                      if(!ctx) { console.error("Failed to get context after recreating canvas"); return; }
+                 }
+
+
+                 // Extract data using the properties from processedData
+                 const chartLabels = categoriesForChart.map(cat => cat.name);
+                 const chartAmounts = categoriesForChart.map(cat => cat.amount);
+                 const chartBackgroundColors = categoriesForChart.map(cat => getCssVarValue(cat.colorVar)); // Use fixed colorVar
+
+                 const maxAmount = chartAmounts.length > 0 ? Math.max(...chartAmounts.filter(v => !isNaN(v))) : 100;
 
                  data = {
-                     labels: categories.map(cat => cat.name),
-                     datasets: [{ data: amounts, backgroundColor: backgroundColors, borderWidth: 0, borderRadius: 4, barPercentage: 0.8, categoryPercentage: 0.8 }]
+                     labels: chartLabels,
+                     datasets: [{
+                         data: chartAmounts,
+                         backgroundColor: chartBackgroundColors, // Use colors from mapping
+                         borderWidth: 0,
+                         borderRadius: 4,
+                         barPercentage: 0.8,
+                         categoryPercentage: 0.8
+                     }]
                  };
                  options = {
                      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
                      scales: {
-                         x: { beginAtZero: true, suggestedMax: maxAmount * 1.18, // Increased for label space
+                         x: { beginAtZero: true, suggestedMax: maxAmount * 1.18,
                              ticks: { color: textColorSecondary, font: { size: 11 }, padding: 8 },
                              grid: { color: gridColor, drawTicks: false, borderDash: [3, 3] },
                              border: { display: false },
@@ -908,11 +1036,11 @@
                      },
                      plugins: {
                          legend: { display: false },
-                         tooltip: { enabled: false, external: externalTooltipHandler }, // Use custom external tooltip
-                         datalabels: commonDataLabelConfig // Apply common datalabel config
+                         tooltip: { enabled: false, external: externalTooltipHandler },
+                         datalabels: commonDataLabelConfig
                      },
                      layout: { padding: { top: 5, bottom: 5, left: 5, right: 15 } },
-                     onClick: handleChartClick
+                     onClick: handleChartClick // handleChartClick should still work
                  };
                  expenseChart = new Chart(ctx, { type: 'bar', data: data, options: options });
              }
@@ -1026,20 +1154,22 @@
                     </div>`;
         }
 
-        function displayCategoryList(cycleData) { // Renamed parameter
+        function displayCategoryList(categoriesToShow) { // Renamed parameter for clarity
             categoryListTitle.textContent = "Top Categories";
-            const categoriesToShow = cycleData?.categories || []; // Use cycleData
             let listHTML = '';
-            if (categoriesToShow.length === 0) {
-                listHTML = `<p class="no-expenses-message">No spending categories found for this period.</p>`; // Updated message
-            }
-            else {
+
+            // Directly check the array passed in
+            if (!categoriesToShow || categoriesToShow.length === 0) {
+                listHTML = `<p class="no-expenses-message">No spending categories found for this period.</p>`;
+            } else {
                 listHTML = `<ul class="category-list" id="category-list-ul">`;
-                categoriesToShow.forEach((category, index) => {
+                categoriesToShow.forEach((category) => { // Loop through the provided array
                     const categoryName = category.name;
-                    const iconName = getIconNameForCategory(categoryName);
-                    const innerColorVar = categoryColors[index % categoryColors.length].inner;
-                    listHTML += `<li class="category-item" data-category="${categoryName}" style="--inner-color: var(${innerColorVar});">
+                    const iconName = category.iconName; // Use the iconName from the processed data
+                    const colorVarName = category.colorVar; // Use the colorVar name from the processed data
+
+                    // Build the list item using the properties from the category object
+                    listHTML += `<li class="category-item" data-category="${categoryName}" style="--inner-color: var(${colorVarName});">
                                      <i data-feather="${iconName}"></i>
                                      <span class="category-name">${categoryName}</span>
                                      <span class="category-amount">${formatCurrency(category.amount)}</span>
@@ -1047,9 +1177,13 @@
                 });
                 listHTML += `</ul>`;
             }
+
             categoryContent.innerHTML = listHTML; // Update container
-            try { feather.replace({ width: 18, height: 18, 'stroke-width': 2 }); } // Render icons
-            catch (e) { console.error("Feather Error:", e); }
+            try {
+                feather.replace({ width: 18, height: 18, 'stroke-width': 2 }); // Re-render icons
+            } catch (e) {
+                console.error("Feather Error:", e);
+            }
         }
 
           function displayCategoryDetails(categoryName, transactionsArray) {
@@ -1329,37 +1463,55 @@
               createOrUpdateChart(historyData, 'categoryHistory');
          }
 
-        function updateDashboardUI(cycleKey) { // Renamed parameter
-              const data = dashboardData[cycleKey]; // Use cycleKey
-              currentViewMode = 'monthlyOverview'; selectedCategoryForHistory = null; // Reset state
-              removeBackButton(listContainerHeader, 'back-to-list-header'); // Clean up buttons
-              removeBackButton(graphContainerHeader, 'back-to-graph-header');
-              graphTitleElement.textContent = "Spending by Category"; // Reset titles
-              categoryListTitle.textContent = "Top Categories";
+        // --- Core Update Functions (Modified for Processed Data) ---
+        function updateDashboardUI(cycleKey) {
+             const rawCycleData = dashboardData[cycleKey];
+             currentViewMode = 'monthlyOverview'; selectedCategoryForHistory = null;
+             removeBackButton(listContainerHeader, 'back-to-list-header');
+             removeBackButton(graphContainerHeader, 'back-to-graph-header');
+             graphTitleElement.textContent = "Spending by Category";
+             categoryListTitle.textContent = "Top Categories";
 
-              if (!data) {
-                  // Handle no data for the cycle - display formatted key, zero total
-                   currentMonthDisplay.textContent = formatCycleKeyForDisplay(cycleKey); // Display formatted key
-                   totalSpendAmountEl.textContent = formatCurrency(0);
-                   categoryContent.innerHTML = `<p class="no-expenses-message">No spending data found for this period.</p>`;
-                   if (expenseChart) { expenseChart.destroy(); expenseChart = null; }
-                   chartWrapperElement.innerHTML = '<canvas id="expense-chart"></canvas>'; // Ensure canvas exists for next load
-                   // Update button states based on index
-                   prevMonthBtn.disabled = (currentMonthIndex <= 0);
-                   nextMonthBtn.disabled = (currentMonthIndex >= monthKeys.length - 1);
-                   return;
-              }
+             // Use the formatter for the header display immediately
+             currentMonthDisplay.textContent = formatCycleKeyForDisplay(cycleKey);
+             totalSpendAmountEl.textContent = formatCurrency(rawCycleData?.total || 0); // Show total from raw data
 
-              // Use the formatter for display
-              currentMonthDisplay.textContent = formatCycleKeyForDisplay(cycleKey); // <-- USE FORMATTER
-              totalSpendAmountEl.textContent = formatCurrency(data.total);
-              requestAnimationFrame(() => { // Ensure UI updates smoothly
-                  createOrUpdateChart(data, 'monthlyOverview');
-                  displayCategoryList(data); // Pass cycle data
-              });
-              prevMonthBtn.disabled = (currentMonthIndex <= 0);
-              nextMonthBtn.disabled = (currentMonthIndex >= monthKeys.length - 1);
+             // Update nav button states
+             prevMonthBtn.disabled = (currentMonthIndex <= 0);
+             nextMonthBtn.disabled = (currentMonthIndex >= monthKeys.length - 1);
+
+             console.log(`Checking data for cycleKey: ${cycleKey}`, rawCycleData); // <-- Add this line
+if (!rawCycleData || !rawCycleData.details || Object.keys(rawCycleData.details).length === 0) {
+    // ... rest of the if block
+}
+
+             if (!rawCycleData || !rawCycleData.details || Object.keys(rawCycleData.details).length === 0) {
+                 // Handle no data for the cycle
+                 categoryContent.innerHTML = `<p class="no-expenses-message">No spending data found for this period.</p>`;
+                 if (expenseChart) { expenseChart.destroy(); expenseChart = null; }
+                 // Ensure canvas exists but clear any old message
+                 chartWrapperElement.innerHTML = '<canvas id="expense-chart"></canvas>';
+                 createOrUpdateChart({ categories: [] }, 'monthlyOverview'); // Explicitly clear chart
+                 return;
+             }
+
+             // --- Process the data using the new function ---
+             const processedData = processCycleDataForDisplay(rawCycleData, categoryMappings);
+             console.log("Processed data for display:", processedData); // <-- ADD THIS LINE
+
+             // Store the contributing keys for 'Other Expenses' if needed later
+             if(rawCycleData) {
+                rawCycleData.otherKeys = processedData.otherContributingKeys;
+             }
+             // --- End Data Processing ---
+
+             requestAnimationFrame(() => {
+                 // Pass the *processed* categories to chart and list functions
+                 createOrUpdateChart(processedData.displayCategories, 'monthlyOverview');
+                 displayCategoryList(processedData.displayCategories);
+             });
          }
+         // --- End Core Update Functions ---
 
          // Renamed function for clarity
         function highlightHistoryBarForCycle(cycleKeyToHighlight) {
