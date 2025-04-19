@@ -131,6 +131,47 @@
             font-size: 1.0rem;
             flex-shrink: 0; /* IMPORTANT: Prevent this row from shrinking */
         }
+                /* --- Styling for the Average Row --- */
+        .details-average-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline; /* Align text baselines */
+            padding: 10px 5px 15px 5px; /* Slightly less top padding than total, more bottom */
+            /* No border-top needed, separation comes from placement */
+            font-size: 0.9rem; /* Slightly smaller than total */
+            flex-shrink: 0; /* Prevent shrinking */
+            margin-top: -5px; /* Pull slightly closer to the total row above it */
+        }
+
+        .average-label {
+            color: var(--text-secondary); /* Use secondary color for the label */
+            margin-right: 15px;
+            white-space: nowrap;
+        }
+
+        .average-value {
+            color: var(--text-primary); /* Primary color for the value */
+            font-weight: 500;
+            white-space: nowrap;
+            text-align: right;
+        }
+
+        .average-diff {
+            font-size: 0.8rem; /* Smaller font for the difference */
+            margin-left: 8px; /* Space it from the average amount */
+            font-weight: 400; /* Normal weight */
+        }
+
+        .average-diff.positive {
+            color: #E8684A; /* Example: Use a theme color (Subtle Red/Orange for over average) */
+            /* Or define and use --danger-color variable */
+        }
+
+        .average-diff.negative {
+            color: #61DDAA; /* Example: Use a theme color (Subtle Green for under average) */
+            /* Or define and use --success-color variable */
+        }
+        
         /* --- End Category Details Layout --- */
 
 
@@ -774,23 +815,106 @@
             catch (e) { console.error("Feather Error:", e); }
         }
 
-        function displayCategoryDetails(categoryName, transactionsArray) {
-            categoryListTitle.textContent = categoryName; // Just the name for simplicity in this view
-            const expenses = transactionsArray || [];
-            let total = expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-            let transactionsHTML = '';
-            if (expenses.length > 0) {
-                expenses.forEach(item => { transactionsHTML += formatTransactionRow(item); });
-            }
-            // Update message for clarity
-            let detailsHTML = `<div class="category-details">
-                                  <div class="transactions-scroll-wrapper">
-                                     ${expenses.length > 0 ? transactionsHTML : `<p class="no-expenses-message">No expenses recorded for ${categoryName} in this period.</p>`}
-                                  </div>
-                                  ${expenses.length > 0 ? `<div class="details-total-row"><span>Total</span><span>${formatCurrency(total)}</span></div>` : ''}
-                               </div>`;
-            categoryContent.innerHTML = detailsHTML;
-        }
+          function displayCategoryDetails(categoryName, transactionsArray) {
+              categoryListTitle.textContent = categoryName; // Set category title
+              const expenses = transactionsArray || [];
+              const currentCycleKey = monthKeys[currentMonthIndex]; // Get current cycle key
+
+              // Calculate current total
+              let currentTotal = expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+
+              // --- Calculate Average (Example: Last 6 Periods including current) ---
+              const numPeriodsForAvg = 6;
+              let historicalTotals = [];
+              const currentCycleIndexInKeys = monthKeys.indexOf(currentCycleKey);
+              let averageSpend = 0; // Initialize average
+              let difference = 0; // Initialize difference
+
+              if (currentCycleIndexInKeys !== -1 && dashboardData && Object.keys(dashboardData).length > 0) {
+                  const startIndex = Math.max(0, currentCycleIndexInKeys - numPeriodsForAvg + 1);
+                  for (let i = startIndex; i <= currentCycleIndexInKeys; i++) {
+                      const key = monthKeys[i];
+                      const cycleData = dashboardData[key];
+                      let periodTotal = 0;
+
+                      // Check if cycleData and details exist for the key
+                      if (cycleData && cycleData.details) {
+                          // Calculate total for the specific category in that historical period
+                          if (cycleData.details[categoryName]) {
+                              periodTotal = cycleData.details[categoryName].reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+                          } else if (categoryName === "Other") {
+                              // Calculate "Other" total for historical period
+                              const displayedCatsHist = cycleData.categories || [];
+                              const topCatsHistNames = displayedCatsHist.map(c => c.name).filter(n => n !== "Other");
+                              const allDetailKeysHist = Object.keys(cycleData.details || {});
+                              const otherKeysHist = allDetailKeysHist.filter(k => !topCatsHistNames.includes(k));
+                              otherKeysHist.forEach(k => {
+                                  periodTotal += (cycleData.details[k] || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+                              });
+                          }
+                      }
+                      historicalTotals.push(periodTotal);
+                  } // End loop through historical keys
+
+                  // Calculate average if historical totals were collected
+                  if (historicalTotals.length > 0) {
+                      const sumOfTotals = historicalTotals.reduce((sum, total) => sum + total, 0);
+                      averageSpend = sumOfTotals / historicalTotals.length;
+                      difference = currentTotal - averageSpend; // Calculate difference only if average exists
+                  }
+              }
+              // --- End Average Calculation ---
+
+
+              // --- Build Transaction List HTML ---
+              let transactionsHTML = '';
+              if (expenses.length > 0) {
+                  expenses.forEach(item => { transactionsHTML += formatTransactionRow(item); });
+              }
+              // --- End Transaction List HTML ---
+
+
+              // --- Build Average Row HTML ---
+              let averageRowHTML = '';
+              // Only show average row if average was calculated and is greater than zero (or adjust threshold if needed)
+              if (averageSpend > 0) {
+                  let diffText = '';
+                  let diffClass = '';
+                  // Only show difference if it's meaningfully different from zero
+                  if (Math.abs(difference) > 0.01) {
+                      diffText = `(${difference >= 0 ? '+' : ''}${formatCurrency(difference)})`;
+                      diffClass = difference >= 0 ? 'positive' : 'negative';
+                  }
+                  averageRowHTML = `
+                      <div class="details-average-row">
+                          <span class="average-label">Avg. (Last ${historicalTotals.length} Periods)</span>
+                          <span class="average-value">
+                              ${formatCurrency(averageSpend)}
+                              ${diffText ? `<span class="average-diff ${diffClass}">${diffText}</span>` : ''}
+                          </span>
+                      </div>`;
+              }
+              // --- End Average Row HTML ---
+
+
+              // --- Assemble Final Details HTML ---
+              let detailsHTML = `
+                  <div class="category-details">
+                      <div class="transactions-scroll-wrapper">
+                          ${expenses.length > 0 ? transactionsHTML : `<p class="no-expenses-message">No expenses recorded for ${categoryName} in this period.</p>`}
+                      </div>
+                      ${expenses.length > 0 ? `
+                          <div class="details-total-row">
+                              <span>Total</span>
+                              <span>${formatCurrency(currentTotal)}</span>
+                          </div>
+                          ${averageRowHTML}
+                      ` : ''}
+                  </div>`;
+              // --- End Final Details HTML ---
+
+              categoryContent.innerHTML = detailsHTML; // Update the UI
+          }
 
          function displayHistoricalCategoryDetails(categoryName, cycleKey, transactionsArray) { // Renamed parameter monthKey to cycleKey
            // Use the formatter for the title part
