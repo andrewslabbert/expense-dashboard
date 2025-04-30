@@ -141,15 +141,15 @@ function getDataForDashboard() {
       delete cycleData.categoriesMap; // Cleanup temporary map from cycleData
     } // End Final Formatting Loop
 
-        // Explicitly remove Transfer details before sending to client
+    // --- Explicitly remove Transfer details before sending to client ---
     for (const cycleKey in processedData) {
-        if (processedData[cycleKey] && processedData[cycleKey].details && processedData[cycleKey].details[TRANSFER_CATEGORY_NAME]) {
-             // Logger.log(`Removing transfer details for cycle: ${cycleKey}`); // Optional: for debugging
-             delete processedData[cycleKey].details[TRANSFER_CATEGORY_NAME];
-        }
+      if (processedData[cycleKey] && processedData[cycleKey].details && processedData[cycleKey].details[TRANSFER_CATEGORY_NAME]) {
+           // Logger.log(`Removing transfer details for cycle: ${cycleKey}`); // Optional: for debugging
+           delete processedData[cycleKey].details[TRANSFER_CATEGORY_NAME];
+      }
     }
 
-    // Logger.log("Processed Data: " + JSON.stringify(processedData, null, 2));
+    // Logger.log("Processed Data: " + JSON.stringify(processedData, null, 2)); // Keep commented out unless debugging
     return processedData;
 
   } catch (error) {
@@ -207,5 +207,60 @@ function getCycleKey(date) {
       return `${y}-${m}-${dy}`;
   };
 
+  // Ensure dates are valid before formatting
+  if (!cycleStartDate || isNaN(cycleStartDate.getTime()) || !cycleEndDate || isNaN(cycleEndDate.getTime())) {
+      Logger.log(`Error calculating cycle dates for input date: ${date}`);
+      return ""; // Return empty string if cycle dates are invalid
+  }
+
   return `${formatDatePart(cycleStartDate)}_to_${formatDatePart(cycleEndDate)}`;
-}]
+} // *** End of getCycleKey function ***
+
+
+/**
+ * Calculates the cycle key string (YYYY-MM-DD_to_YYYY-MM-DD) for a given date.
+ * Cycles run from CYCLE_START_DAY of month A to (CYCLE_START_DAY - 1) of month B.
+ *
+ * @param {Date} date The transaction date object (should be UTC).
+ * @returns {string} The cycle key string, e.g., "2024-04-22_to_2024-05-21".
+ *                   Returns empty string if date is invalid.
+ */
+function getCycleKey(date) {
+  if (!date || isNaN(date.getTime())) {
+    Logger.log("getCycleKey received invalid date.");
+    return "";
+  }
+
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth(); // 0-indexed (0=Jan, 11=Dec)
+  const day = date.getUTCDate();
+
+  let cycleStartDate, cycleEndDate;
+
+  if (day >= CYCLE_START_DAY) {
+    // Cycle starts in the current month
+    cycleStartDate = new Date(Date.UTC(year, month, CYCLE_START_DAY));
+    // Cycle ends in the next month (Date.UTC handles month rollover)
+    cycleEndDate = new Date(Date.UTC(year, month + 1, CYCLE_START_DAY - 1));
+  } else {
+    // Cycle started in the previous month (Date.UTC handles month rollover)
+    cycleStartDate = new Date(Date.UTC(year, month - 1, CYCLE_START_DAY));
+    // Cycle ends in the current month
+    cycleEndDate = new Date(Date.UTC(year, month, CYCLE_START_DAY - 1));
+  }
+
+  // Helper to format date part as YYYY-MM-DD
+  const formatDatePart = (d) => {
+      // Check if the date object is valid before formatting
+      if (!d || isNaN(d.getTime())) {
+          Logger.log("formatDatePart received invalid date object.");
+          return "YYYY-MM-DD"; // Return placeholder or throw error
+      }
+      const y = d.getUTCFullYear();
+      const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const dy = String(d.getUTCDate()).padStart(2, '0');
+      return `${y}-${m}-${dy}`;
+  };
+
+  return `${formatDatePart(cycleStartDate)}_to_${formatDatePart(cycleEndDate)}`;
+}

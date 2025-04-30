@@ -15,13 +15,13 @@
     <?!= HtmlService.createHtmlOutputFromFile('Stylesheet').getContent(); ?>
 
 </head>
-<body>
-<!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-brand">Expense Tracker</div> <!-- Updated Name -->
+<body> <!-- JS will add/remove 'detail-view-active' class here -->
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <!-- Sidebar content remains the same -->
+         <div class="sidebar-brand">Expense Tracker</div>
             <nav class="sidebar-nav">
                 <ul>
-                    <!-- MODIFIED LINKS: Wrap text in <span class="nav-text"> -->
                     <li><a href="#" class="active"><i data-feather="grid"></i><span class="nav-text">Dashboard</span></a></li>
                     <li><a href="#"><i data-feather="pie-chart"></i><span class="nav-text">Reports</span> <span class="coming-soon-badge">Soon</span></a></li>
                     <li><a href="#"><i data-feather="list"></i><span class="nav-text">Transactions</span> <span class="coming-soon-badge">Soon</span></a></li>
@@ -29,46 +29,93 @@
                     <li><a href="#"><i data-feather="settings"></i><span class="nav-text">Settings</span> <span class="coming-soon-badge">Soon</span></a></li>
                 </ul>
             </nav>
-
-            <!-- ADD THIS TOGGLE BUTTON -->
             <div class="sidebar-toggle" id="sidebar-toggle-button" title="Toggle Sidebar">
-                <i data-feather="chevrons-right"></i> <!-- Initial icon for collapsed state -->
+                <i data-feather="chevrons-right"></i>
             </div>
-            <!-- End Toggle Button -->
-
-        </aside>
+    </aside>
 
     <!-- Main Area -->
     <main class="main-area">
         <div class="main-content-wrapper">
              <!-- Header Controls -->
              <div class="main-content-header-controls">
+                 <!-- Month Navigator and Total Spend remain the same -->
                  <div class="month-navigator">
                      <button id="prev-month" title="Previous Period" disabled><i data-feather="chevron-left"></i></button>
                      <div class="month-display-container" id="current-month-display-container">
-                    <span class="month-display-main" id="current-month-main">Loading...</span>
-                    <span class="month-display-sub" id="current-month-sub"></span>
-                </div>
+                         <span class="month-display-main" id="current-month-main">Loading...</span>
+                         <span class="month-display-sub" id="current-month-sub"></span>
+                     </div>
                      <button id="next-month" title="Next Period" disabled><i data-feather="chevron-right"></i></button>
                  </div>
                  <div class="total-spend">
-                     <div class="total-spend-label">Total Spent This Period</div> <!-- Changed from Month -->
+                     <div class="total-spend-label">Total Spent This Period</div>
                      <div class="total-spend-amount" id="total-spend-amount">---</div>
                  </div>
              </div>
-             <!-- Dashboard Core -->
+            <!-- Dashboard Core -->
             <div class="dashboard-core">
-                 <div class="graph-container">
-                    <div class="container-header" id="graph-header"> <h2 class="container-title" id="graph-title">Spending by Category</h2> <!-- Back button added dynamically --> </div>
-                    <div class="chart-wrapper"> <canvas id="expense-chart"></canvas> </div>
+
+                <!-- Container 1: Graph Area (Content: Category Graph OR Month Graph) -->
+                <div class="graph-container" id="graph-container">
+                    <div class="container-header" id="graph-header">
+                        <!-- Back button added dynamically -->
+                        <h2 class="container-title" id="graph-title">Spending by Category</h2>
+                    </div>
+                    <div class="chart-wrapper">
+                        <!-- Canvas added/managed by JS -->
+                        <canvas id="expense-chart"></canvas>
+                    </div>
                 </div>
-                <div class="category-list-container">
-                    <div class="container-header" id="list-header"> <h2 class="container-title" id="category-list-title">Top Categories</h2> <!-- Back button added dynamically --> </div>
-                    <div id="category-content"> <p class="no-expenses-message">Loading data...</p> </div>
+                <!-- End Container 1 -->
+
+                <!-- Container 2: List/Insights/Transactions Area -->
+                <div class="category-list-container" id="category-list-container">
+                    <div class="container-header" id="list-header">
+                        <!-- Back button added dynamically -->
+                        <h2 class="container-title" id="category-list-title">Categories / Insights</h2>
+                    </div>
+
+                    <!-- Insights Area (Visibility controlled by CSS/JS) -->
+                    <div class="insights-area" id="insights-area">
+                        <!-- Insight Card 1: Weekly Day-to-Day -->
+                        <div class="insight-card" id="weekly-dtd-insight">
+                            <div class="insight-card-header">
+                                <i data-feather="calendar"></i>
+                                <span class="insight-title">Weekly Variable Spending</span>
+                            </div>
+                            <div class="insight-card-body">
+                                <div class="insight-value" id="weekly-dtd-value">--</div>
+                                <div class="insight-comparison" id="weekly-dtd-comparison">vs Last Week: --</div>
+                            </div>
+                            <div class="insight-card-footer">
+                                Current Week <span id="weekly-dtd-range"></span>
+                            </div>
+                        </div>
+
+                        <!-- Add more insight cards here later -->
+                         <div class="insights-placeholder" style="padding: 20px; text-align: center; color: var(--text-secondary); margin-top: 20px; font-style: italic;">
+                            (More Insights Coming Soon)
+                        </div>
+
+                    </div>
+                    <!-- End Insights Area -->
+
+                    <!-- Dynamic Content Area: Holds Category List OR Transaction Details -->
+                    <div id="category-content">
+                        <!-- JS populates this area -->
+                        <p class="no-expenses-message">Loading data...</p>
+                    </div>
+                    <!-- End Dynamic Content Area -->
+
                 </div>
+                <!-- End Container 2 -->
+
             </div>
-        </div>
-    </main>
+            <!-- End Dashboard Core -->
+
+        </div> <!-- This closes .main-content-wrapper -->
+    </main> <!-- This closes .main-area -->
 
 <?!= HtmlService.createHtmlOutputFromFile('JavaScript').getContent(); ?>
 

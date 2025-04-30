@@ -1,698 +1,826 @@
-        
+<!-- Stylesheet.html -->
 <style>
-/* --- Configuration (Focused Nocturne Style) --- */
+    /* --- Configuration (Focused Nocturne Style) --- */
+    :root {
+        --bg-base: #16191d;
+        --bg-surface: #1e2228;
+        --bg-card: #252A30;
+        --text-primary: #e8e8e8;
+        --text-secondary: #a8b2c0;
+        --text-tertiary: #6f7b8e;
+        --accent: #00BFA6;
+        --border-color: #30363e;
+        --grid-line-color: rgba(76, 86, 100, 0.5);
+        --shadow-color: transparent;
+        /* Category Colors */
+        --c1: #5B8FF9; --c2: #61DDAA; --c3: #F6BD16; --c4: #65789B; --c5: #E8684A;
+        --c6: #9270CA; --c7: #FF9D4D; --c8: #269A99; --c9: #FF99C3; --c10: #A8B2C0;
+        --c11: #FF82B1; --c12: #37CBCB; --c13: #8D5A9E; --c14: #FFB63D; --c15: #A6E22E;
+        --c16: #FD971F; --c17: #66D9EF; --c18: #F92672; --c19: #AE81FF;
+        /* Layout Variables */
+        --font-family: 'Inter', sans-serif;
+        --sidebar-width: 240px;
+        --sidebar-width-collapsed: 70px;
+        --header-height: 65px;
+        --content-padding: 35px;
+        --card-padding: 25px;
+        --card-radius: 8px;
+        --history-bar-opacity: 0.45;
+    }
+    
+    /* --- Base, Layout, Sidebar --- */
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    html, body {
+        height: 100%;
+        overflow: hidden; /* Prevent body scroll */
+    }
+    body {
+        font-family: var(--font-family);
+        background-color: var(--bg-base);
+        color: var(--text-primary);
+        line-height: 1.6;
+        font-size: 14px;
+        display: flex;
+        transition: padding-left 0.3s ease-in-out; /* For sidebar animation */
+    }
+    button {
+        font: inherit;
+        cursor: pointer;
+        border: none;
+        background: none;
+        color: inherit;
+    }
+    ul {
+        list-style: none;
+    }
+    a {
+        color: inherit;
+        text-decoration: none;
+    }
+    svg.feather {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2;
+        vertical-align: middle;
+        color: var(--text-secondary);
+    }
+    
+    /* --- Sidebar Styles (Collapsible) --- */
+    .sidebar {
+        width: var(--sidebar-width-collapsed);
+        background-color: var(--bg-surface);
+        padding: 20px 0;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        border-right: 1px solid var(--border-color);
+        transition: width 0.3s ease-in-out;
+        overflow-x: hidden;
+    }
+    .sidebar-brand {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 25px;
+        padding: 0 10px;
+        color: var(--text-primary);
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+    .sidebar-nav ul {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 0 5px;
+    }
+    .sidebar-nav a {
+        display: flex;
+        align-items: center;
+        justify-content: center; /* Center icon when collapsed */
+        padding: 12px 10px;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        transition: background-color 0.2s ease, color 0.2s ease, border-left 0.2s ease;
+        position: relative;
+        border-left: 3px solid transparent;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+    .sidebar-nav a .nav-text {
+        display: none; /* Hidden when collapsed */
+        margin-left: 10px;
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out 0.1s;
+    }
+    .sidebar-nav a svg.feather {
+        margin-right: 0; /* No margin when only icon */
+        flex-shrink: 0;
+    }
+    .sidebar-nav a:hover {
+        background-color: var(--bg-card);
+        color: var(--text-primary);
+    }
+    .sidebar-nav a:hover svg.feather {
+        color: var(--text-primary);
+    }
+    .sidebar-nav a.active {
+        background-color: rgba(0, 191, 166, 0.1);
+        color: var(--accent);
+        font-weight: 600;
+        border-left-color: var(--accent);
+    }
+    .sidebar-nav a.active svg.feather {
+        color: var(--accent);
+    }
+    .coming-soon-badge {
+        font-size: 0.6rem;
+        font-weight: 500;
+        background-color: var(--text-tertiary);
+        color: var(--bg-surface);
+        padding: 1px 5px;
+        border-radius: 3px;
+        margin-left: auto;
+        line-height: 1.1;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        display: none; /* Hidden when collapsed */
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out 0.1s;
+    }
+    .sidebar-toggle {
+        margin-top: auto; /* Push to bottom */
+        padding: 15px 0;
+        text-align: center;
+        border-top: 1px solid var(--border-color);
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .sidebar-toggle svg {
+        width: 20px;
+        height: 20px;
+        margin: 0 auto; /* Center icon */
+        color: var(--text-secondary);
+        transition: transform 0.3s ease, color 0.2s ease;
+        display: block;
+    }
+    .sidebar-toggle:hover svg {
+        color: var(--text-primary);
+    }
+    /* Expanded Sidebar Styles */
+    body.sidebar-expanded .sidebar {
+        width: var(--sidebar-width);
+        padding: 30px 20px;
+    }
+    body.sidebar-expanded .sidebar-brand {
+        text-align: left;
+        padding: 0 5px;
+    }
+    body.sidebar-expanded .sidebar-nav ul {
+        padding: 0;
+    }
+    body.sidebar-expanded .sidebar-nav a {
+        justify-content: flex-start;
+        padding: 12px 15px;
+    }
+    body.sidebar-expanded .sidebar-nav a .nav-text {
+        display: inline;
+        opacity: 1;
+        margin-right: auto; /* Push badge right */
+    }
+    body.sidebar-expanded .sidebar-nav a svg.feather {
+        margin-right: 10px;
+    }
+    body.sidebar-expanded .coming-soon-badge {
+        display: inline-block;
+        opacity: 1;
+    }
+    body.sidebar-expanded .sidebar-toggle svg {
+        /* transform: rotate(180deg); Optional: flip icon */
+    }
+    /* --- End Sidebar Styles --- */
+    
+    /* --- Main Area --- */
+    .main-area {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+    }
+    .main-content-wrapper {
+        flex-grow: 1;
+        overflow-y: auto; /* Allow scrolling of content */
+        padding: var(--content-padding);
+        display: flex;
+        flex-direction: column;
+        gap: var(--content-padding);
+    }
+    
+    /* --- Header Controls (Month Nav, Total Spend) --- */
+    .main-content-header-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+        min-height: var(--header-height);
+    }
+    .month-navigator {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .month-navigator button {
+        font-size: 1.3rem;
+        color: var(--text-secondary);
+        transition: all 0.2s ease;
+        line-height: 1;
+        padding: 6px;
+        border-radius: 6px;
+    }
+    .month-navigator button:hover:not(:disabled) {
+        color: var(--text-primary);
+        background-color: var(--bg-card);
+    }
+    .month-navigator button:disabled {
+        color: var(--text-tertiary);
+        cursor: not-allowed;
+        background-color: transparent;
+    }
+    .month-display-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 250px; /* Prevent layout shifts */
+        text-align: center;
+        line-height: 1.3;
+        padding: 0 5px;
+    }
+    .month-display-main {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: block;
+    }
+    .month-display-sub {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: block;
+        margin-top: 2px;
+    }
+    .total-spend {
+        text-align: right;
+    }
+    .total-spend-label {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+    }
+    .total-spend-amount {
+        font-size: 1.7rem;
+        font-weight: 700;
+        color: var(--accent);
+        line-height: 1.2;
+    }
+    
+    /* --- Core Dashboard Layout --- */
+    .dashboard-core {
+        display: grid;
+        /* Default: Desktop grid */
+        grid-template-columns: 3fr 2fr;
+        gap: var(--content-padding);
+        flex-grow: 1;
+        min-height: 0; /* Crucial for allowing grid children to scroll */
+    }
+    .graph-container, .category-list-container {
+        background-color: var(--bg-card);
+        border-radius: var(--card-radius);
+        padding: var(--card-padding);
+        display: flex; /* Use flex for internal structure */
+        flex-direction: column;
+        box-shadow: none;
+        border: 1px solid var(--border-color);
+        overflow: hidden; /* Prevent internal content overflow */
+    }
+    
+    /* --- Container Header & Back Button --- */
+    .container-header {
+        display: flex;
+        align-items: center; /* Vertically align title and button */
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid var(--border-color);
+        flex-shrink: 0; /* Prevent header from shrinking */
+        flex-wrap: nowrap; /* Ensure button and title stay on one line */
+    }
+    .container-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0;
+        flex-grow: 1; /* Allow title to take available space */
+        flex-shrink: 1; /* Allow title to shrink if needed */
+        margin-right: 10px; /* Space before potential button */
+        overflow: hidden; /* Handle long titles */
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .back-button-header {
+        display: inline-flex; /* Correct display type */
+        align-items: center;
+        gap: 7px;
+        background-color: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 7px 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.85rem;
+        font-weight: 500;
+        line-height: 1;
+        flex-shrink: 0; /* Prevent button from shrinking */
+        margin-right: 15px; /* Space between button and title */
+    }
+    .back-button-header svg {
+        width: 15px;
+        height: 15px;
+        /* margin-right: 0; No extra margin needed due to gap */
+    }
+    .back-button-header:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background-color: rgba(0, 191, 166, 0.1);
+    }
+    
+    
+    /* --- Chart Wrapper (Inside Graph Container) --- */
+    .chart-wrapper {
+        flex-grow: 1; /* Take remaining vertical space */
+        position: relative; /* For absolute positioning of canvas */
+        min-height: 300px; /* Ensure minimum space */
+    }
+    #expense-chart {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    
+    /* --- Insights Placeholder (Inside Category List Container) --- */
+    .insights-placeholder {
+        /* Basic styling, visibility controlled by state/responsive rules */
+        padding: 20px;
+        text-align: center;
+        color: var(--text-secondary);
+        /* Add min-height if needed to prevent collapse */
+    }
+    
+    
+    /* --- Dynamic Content Area (#category-content - Inside Category List Container) --- */
+    /* This holds EITHER the Category List UL OR Transaction Details */
+    #category-content {
+        display: flex; /* Use flex to manage children */
+        flex-direction: column;
+        flex-grow: 1; /* Take remaining space */
+        min-height: 0; /* Essential for enabling child scrolling */
+        overflow: hidden; /* Hide overflow */
+    }
+    
+    /* --- Category List (UL Element - child of #category-content) --- */
+    .category-list {
+        flex-grow: 1; /* Allows list to take space */
+        overflow-y: auto; /* Enable scrolling */
+        margin: 0 -5px; /* Counteract item padding for edge alignment */
+        padding: 0 5px; /* Restore padding */
+    }
+    .category-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+        position: relative; /* For --inner-color */
+    }
+    .category-list .category-item + .category-item {
+        margin-top: 2px; /* Space between items */
+    }
+    .category-item:hover {
+        background-color: rgba(232, 232, 232, 0.05);
+    }
+    .category-item svg.feather {
+        color: var(--inner-color); /* Use CSS variable */
+        margin-right: 14px;
+        flex-shrink: 0;
+    }
+    .category-name {
+        font-weight: 500;
+        color: var(--text-primary);
+        flex-grow: 1;
+        margin-right: 15px;
+        font-size: 0.9rem;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+    .category-amount {
+        font-weight: 500;
+        color: var(--text-primary);
+        white-space: nowrap;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+    
+    /* --- Transaction Details Layout (child of #category-content) --- */
+    .category-details {
+        display: flex; /* Use flex for internal layout */
+        flex-direction: column;
+        flex-grow: 1; /* Take space within #category-content */
+        min-height: 0; /* Essential for scrolling */
+        overflow: hidden; /* Hide its own overflow */
+    }
+    .transactions-scroll-wrapper {
+        flex-grow: 1; /* Allow list to take vertical space */
+        overflow-y: auto; /* Enable scrolling */
+        padding-right: 5px; /* Space for scrollbar */
+    }
+    .details-total-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 5px;
+        border-top: 1px solid var(--border-color);
+        font-weight: 600;
+        font-size: 1.0rem;
+        flex-shrink: 0; /* Prevent shrinking */
+    }
+    .details-average-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 10px 5px 15px 5px;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+        margin-top: -5px; /* Pull closer to total row */
+    }
+    .average-label {
+        color: var(--text-secondary);
+        margin-right: 15px;
+        white-space: nowrap;
+    }
+    .average-value {
+        color: var(--text-primary);
+        font-weight: 500;
+        white-space: nowrap;
+        text-align: right;
+    }
+    .average-diff {
+        font-size: 0.8rem;
+        margin-left: 8px;
+        font-weight: 400;
+    }
+    .average-diff.positive { color: #E8684A; /* Red/Orange for over budget */ }
+    .average-diff.negative { color: #61DDAA; /* Green for under budget */ }
+    
+    /* --- Transaction List Item Styles --- */
+    .transaction-list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 8px 5px;
+        border-bottom: 1px solid var(--border-color);
+        line-height: 1.5;
+        overflow: hidden; /* Prevent wide content issues */
+    }
+    .transaction-list-item:last-child {
+        border-bottom: none;
+    }
+    .transaction-left-col {
+        display: flex;
+        align-items: baseline;
+        flex-grow: 1;
+        margin-right: 15px;
+        overflow: hidden; /* Important for ellipsis */
+        gap: 8px;
+    }
+    .transaction-date-short {
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        flex-shrink: 0;
+        white-space: nowrap;
+        min-width: 50px;
+    }
+    .transaction-description-short {
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-weight: 500;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+    .transaction-location-inline { /* Optional location field */
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        flex-shrink: 1; /* Allow shrinking */
+    }
+    .transaction-amount-short {
+        color: var(--text-primary);
+        font-weight: 500;
+        white-space: nowrap;
+        flex-shrink: 0;
+        text-align: right;
+        font-size: 0.85rem;
+    }
+    
+    /* --- General Messages & Scrollbar --- */
+    .no-expenses-message {
+        color: var(--text-secondary);
+        font-style: italic;
+        margin-top: 20px;
+        text-align: center;
+        font-size: 0.9rem;
+        padding: 20px;
+    }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #444c58; border-radius: 4px; border: 2px solid var(--bg-card); }
+    ::-webkit-scrollbar-thumb:hover { background: #555e6d; }
+    
+    /* --- Tooltip --- */
+    div.chartjs-tooltip {
+        background: var(--bg-base); border-radius: 6px; color: var(--text-primary);
+        opacity: 1; pointer-events: none; position: absolute; transform: translate(-50%, -115%);
+        transition: all .1s ease; padding: 10px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+        border: 1px solid var(--border-color); font-family: var(--font-family); font-size: 13px;
+        z-index: 10; min-width: 120px;
+    }
+    div.chartjs-tooltip table { margin: 0px; width: 100%; }
+    div.chartjs-tooltip th { font-weight: 600; padding-bottom: 6px; text-align: left; border-bottom: 1px solid var(--border-color); margin-bottom: 6px; display: block; color: var(--text-primary);}
+    div.chartjs-tooltip td { border-width: 0; padding: 3px 0; display: flex; align-items: center; color: var(--text-primary);}
+    div.chartjs-tooltip span.tooltip-swatch { border-width: 0px; margin-right: 8px; height: 10px; width: 10px; border-radius: 3px; display: inline-block; }
+    
+    
+    /* =========================================== */
+    /* === STATE-BASED VISIBILITY (Desktop Default) === */
+    /* =========================================== */
+    
+    /* --- Default Overview State (No body class) --- */
+    /* Container 1 (Graph): Shows Category Graph (rendered by JS) */
+    /* Container 2 (List/Insights): Shows Insights, Hides List/Details */
+    .insights-area {
+        /* Default state - visibility controlled by media queries below */
+        display: none;
+    }
+    #category-content > .category-list { /* Target UL directly */
+        display: none; /* Hide category list UL */
+    }
+    #category-content > .category-details { /* Target details wrapper */
+        display: none; /* Hide transaction details wrapper */
+    }
+    
+    /* --- Detail State (Desktop - body.detail-view-active) --- */
+    /* Container 1 (Graph): Shows Month Graph (rendered by JS) */
+    /* Container 2 (List/Insights): Hides Insights, Shows Transaction Details */
+    body.detail-view-active .insights-area {
+        display: none !important; /* Hide insights */
+    }
+    body.detail-view-active #category-content > .category-list {
+        display: none !important; /* Ensure list UL is hidden */
+    }
+    body.detail-view-active #category-content > .category-details {
+        display: flex !important; /* Show transaction details wrapper */
+    }
+    
+    
+    /* ============================ */
+    /* === MOBILE RESPONSIVENESS === */
+    /* ============================ */
+    @media (max-width: 768px) {
+    
+        /* --- General Mobile Layout Adjustments --- */
         :root {
-            --bg-base: #16191d; --bg-surface: #1e2228; --bg-card: #252A30; --text-primary: #e8e8e8; --text-secondary: #a8b2c0; --text-tertiary: #6f7b8e; --accent: #00BFA6; --border-color: #30363e; --grid-line-color: rgba(76, 86, 100, 0.5); --shadow-color: transparent;
-            --c1: #5B8FF9; --c2: #61DDAA; --c3: #F6BD16; --c4: #65789B; --c5: #E8684A; --c6: #9270CA; --c7: #FF9D4D; --c8: #269A99; --c9: #FF99C3; --c10: #A8B2C0;
-            --font-family: 'Inter', sans-serif; --sidebar-width: 240px; --sidebar-width-collapsed: 70px;--header-height: 65px; --content-padding: 35px; --card-padding: 25px; --card-radius: 8px; --history-bar-opacity: 0.45;
+            --content-padding: 15px;
+            --card-padding: 15px;
+            --header-height: auto; /* Allow header to wrap */
+            --sidebar-width-collapsed: 55px; /* Slightly smaller */
         }
-
-        /* --- Base, Layout, Sidebar (MODIFIED FOR COLLAPSIBLE) --- */
-        * { box-sizing: border-box; margin: 0; padding: 0; } html, body { height: 100%; overflow: hidden; } body { font-family: var(--font-family); background-color: var(--bg-base); color: var(--text-primary); line-height: 1.6; font-size: 14px; display: flex; transition: padding-left 0.3s ease-in-out; /* Add transition for main area adjustment if needed, though flexbox might handle it */ } button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; } ul { list-style: none; } a { color: inherit; text-decoration: none; } svg.feather { width: 18px; height: 18px; stroke-width: 2; vertical-align: middle; color: var(--text-secondary); /* Icon color */ }
-
-        /* Sidebar - Collapsed by Default */
-        .sidebar {
-            width: var(--sidebar-width-collapsed); /* Default collapsed width */
-            background-color: var(--bg-surface);
-            padding: 20px 0; /* Reduced vertical padding, no horizontal padding */
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            border-right: 1px solid var(--border-color);
-            transition: width 0.3s ease-in-out; /* Smooth width transition */
-            overflow-x: hidden; /* Hide horizontal overflow */
+        body {
+            font-size: 13px;
+            padding-left: 0 !important; /* Remove sidebar space */
         }
-
-        .sidebar-brand {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 25px; /* Slightly reduced margin */
-            padding: 0 10px; /* Minimal padding */
-            color: var(--text-primary);
-            text-align: center; /* Center brand when collapsed */
-            white-space: nowrap; /* Prevent wrapping */
-            overflow: hidden; /* Hide text overflow */
-            /* Optional: Show only an icon when collapsed - requires HTML change */
-        }
-
-        .sidebar-nav ul {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            padding: 0 5px; /* Minimal padding around list */
-        }
-
-        .sidebar-nav a {
-            display: flex;
-            align-items: center;
-            justify-content: center; /* Center icon horizontally when collapsed */
-            padding: 12px 10px; /* Vertical padding, minimal horizontal */
-            border-radius: 6px;
-            font-weight: 500;
-            font-size: 0.95rem;
-            color: var(--text-secondary);
-            transition: background-color 0.2s ease, color 0.2s ease, border-left 0.2s ease;
-            position: relative;
-            border-left: 3px solid transparent;
-            overflow: hidden; /* Hide overflowing content (text) */
-            white-space: nowrap; /* Keep icon and text on one line */
-        }
-
-        .sidebar-nav a .nav-text {
-            display: none; /* Hide text by default */
-            margin-left: 10px; /* Space between icon and text */
-            opacity: 0; /* Start hidden for transition */
-            transition: opacity 0.2s ease-in-out 0.1s; /* Fade in delayed */
-        }
-
-        .sidebar-nav a svg.feather {
-            margin-right: 0; /* No margin when only icon is shown */
-            flex-shrink: 0; /* Prevent icon shrinking */
-        }
-
-        .sidebar-nav a:hover {
-            background-color: var(--bg-card);
-            color: var(--text-primary);
-        }
-        .sidebar-nav a:hover svg.feather {
-            color: var(--text-primary); /* Ensure icon color changes on hover */
-        }
-
-        .sidebar-nav a.active {
-            background-color: rgba(0, 191, 166, 0.1);
-            color: var(--accent);
-            font-weight: 600;
-            border-left-color: var(--accent);
-        }
-
-        .sidebar-nav a.active svg.feather {
-            color: var(--accent);
-        }
-
-        .coming-soon-badge {
-            font-size: 0.6rem;
-            font-weight: 500;
-            background-color: var(--text-tertiary);
-            color: var(--bg-surface);
-            padding: 1px 5px;
-            border-radius: 3px;
-            margin-left: auto;
-            line-height: 1.1;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            display: none; /* Hide by default */
-            opacity: 0;
-            transition: opacity 0.2s ease-in-out 0.1s;
-        }
-
-        /* Sidebar Toggle Button */
-        .sidebar-toggle {
-            margin-top: auto; /* Push to the bottom */
-            padding: 15px 0; /* Padding top/bottom */
-            text-align: center;
-            border-top: 1px solid var(--border-color);
-            cursor: pointer;
-            flex-shrink: 0; /* Prevent shrinking */
-        }
-        .sidebar-toggle svg {
-            width: 20px;
-            height: 20px;
-            margin: 0; /* Reset icon margin */
-            color: var(--text-secondary);
-            transition: transform 0.3s ease, color 0.2s ease;
-            display: block; /* Center icon */
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .sidebar-toggle:hover svg {
-            color: var(--text-primary);
-        }
-
-        /* --- Styles when Sidebar is EXPANDED --- */
-        /* Apply this class to the BODY element via JS */
-        body.sidebar-expanded .sidebar {
-            width: var(--sidebar-width); /* Expand width */
-            padding: 30px 20px; /* Restore original padding */
-        }
-
-        body.sidebar-expanded .sidebar-brand {
-            text-align: left; /* Align text left */
-            padding: 0 5px; /* Restore padding */
-        }
-
-        body.sidebar-expanded .sidebar-nav ul {
-            padding: 0; /* Remove specific list padding */
-        }
-
-        body.sidebar-expanded .sidebar-nav a {
-            justify-content: flex-start; /* Align items left */
-            padding: 12px 15px; /* Restore original padding */
-        }
-
-        body.sidebar-expanded .sidebar-nav a .nav-text {
-            display: inline; /* Show text */
-            opacity: 1; /* Make visible */
-            margin-right: auto; /* Push badge to the right */
-        }
-
-        body.sidebar-expanded .sidebar-nav a svg.feather {
-            margin-right: 10px; /* Restore margin */
-        }
-
-        body.sidebar-expanded .coming-soon-badge {
-            display: inline-block; /* Show badge */
-            opacity: 1;
-        }
-
-        /* Optional: Adjust toggle icon when expanded */
-        body.sidebar-expanded .sidebar-toggle svg {
-            /* transform: rotate(180deg); */ /* Example: if using a single arrow */
-        }
-
-        /* --- Main Area Adjustment --- */
         .main-area {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
+            padding-left: 0;
+            width: 100%;
         }
         .main-content-wrapper {
-            flex-grow: 1;
-            overflow-y: auto;
             padding: var(--content-padding);
-            display: flex;
-            flex-direction: column;
             gap: var(--content-padding);
         }
-/* --- End Layout Modifications --- */
-        /* --- Controls, Core Layout --- */
-         .main-content-header-controls { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; } .month-navigator { display: flex; align-items: center; gap: 12px; } .month-navigator button { font-size: 1.3rem; color: var(--text-secondary); transition: all 0.2s ease; line-height: 1; padding: 6px; border-radius: 6px; } .month-navigator button:hover:not(:disabled) { color: var(--text-primary); background-color: var(--bg-card); } .month-navigator button:disabled { color: var(--text-tertiary); cursor: not-allowed; background-color: transparent; } .current-month { font-size: 1.3rem; font-weight: 600; color: var(--text-primary); min-width: 220px; /* Increased width for cycle display */ text-align: center; } .total-spend { text-align: right; } .total-spend-label { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.6px;} .total-spend-amount { font-size: 1.7rem; font-weight: 700; color: var(--accent); line-height: 1.2; }
-         .dashboard-core { display: grid; grid-template-columns: 3fr 2fr; gap: var(--content-padding); flex-grow: 1; min-height: 0; } .graph-container, .category-list-container { background-color: var(--bg-card); border-radius: var(--card-radius); padding: var(--card-padding); display: flex; flex-direction: column; box-shadow: none; border: 1px solid var(--border-color); overflow: hidden; }
-
-        /* --- Container Header & Back Button --- */
-        .container-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; } .container-title { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0; padding-bottom: 0; border-bottom: none; flex-grow: 1; margin-right: 10px;} .back-button-header { display: inline-flex; align-items: center; gap: 7px; background-color: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 7px 14px; cursor: pointer; transition: all 0.2s ease; font-size: 0.85rem; font-weight: 500; line-height: 1; flex-shrink: 0;} .back-button-header svg { width: 15px; height: 15px; margin-right: 0px; } .back-button-header:hover { border-color: var(--accent); color: var(--accent); background-color: rgba(0, 191, 166, 0.1); }
-
-        /* --- Chart, Category List --- */
-        .chart-wrapper {
-            flex-grow: 1;
-            position: relative;
-            min-height: 300px; /* Ensure chart has space */
+        .sidebar {
+            display: none; /* Hide sidebar completely */
         }
-        #expense-chart {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-        #category-content { /* Container for category list OR details view */
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-            min-height: 0; /* Important for nested flex scrolling */
-            overflow: hidden;
-        }
-        .category-list { /* The scrollable list in the main overview */
-            flex-grow: 1;
-            overflow-y: auto;
-            /* Adjust margin/padding to visually align with container padding if needed */
-            margin: 0 -5px 0 -5px;
-            padding: 0 5px 0 5px;
-        }
-
-        /* --- Category Item (using Icon) --- */
-        .category-item {
-            display: flex;
-            align-items: center; /* Align icon and text vertically */
-            padding: 12px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.15s ease;
-            position: relative; /* Needed for --inner-color variable */
-        }
-        .category-list .category-item + .category-item {
-             margin-top: 2px; /* Space between items */
-        }
-        .category-item:hover {
-             background-color: rgba(232, 232, 232, 0.05); /* Subtle hover effect */
-        }
-
-        /* --- Styling for Feather Icons in category list --- */
-        .category-item svg.feather { /* <-- CORRECTED SELECTOR */
-            color: var(--inner-color); /* Use the color variable from the parent li */
-            margin-right: 14px;     /* Spacing between icon and name */
-            flex-shrink: 0;         /* Prevent icon from shrinking */
-            vertical-align: middle; /* Adjust vertical alignment if needed */
-            /* Feather SVGs use 'currentColor' for stroke by default, so setting 'color' works */
-        }
-
-        .category-name {
-            font-weight: 500;
-            color: var(--text-primary);
-            flex-grow: 1;           /* Take available space */
-            margin-right: 15px;     /* Space before amount */
-            font-size: 0.9rem;
-             /* Add ellipsis if needed for long names */
-             overflow: hidden;
-             white-space: nowrap;
-             text-overflow: ellipsis;
-        }
-        .category-amount {
-            font-weight: 500;
-            color: var(--text-primary);
-            white-space: nowrap;    /* Prevent amount wrapping */
-            font-size: 0.9rem;
-            flex-shrink: 0; /* Prevent amount from shrinking */
-        }
-
-        /* --- Category Details Layout (Scrolling Fix) --- */
-        .category-details {
-            display: flex;           /* Make it a flex container */
-            flex-direction: column;  /* Stack children (scroll wrapper, total row) vertically */
-            flex-grow: 1;            /* Allow it to fill the space given by #category-content */
-            min-height: 0;           /* CRUCIAL for allowing flex children to shrink and scroll */
-            overflow: hidden;        /* Hide any potential overflow from this container itself */
-        }
-        .transactions-scroll-wrapper {
-            flex-grow: 1;            /* Allow the list to take up available vertical space */
-            overflow-y: auto;        /* Enable vertical scrolling ONLY when needed */
-             /* Add minor padding to keep scrollbar from overlapping content */
-             padding-right: 5px;
-             /* margin-right: -5px; */ /* Adjust if needed */
-        }
-        /* Ensure the total row doesn't shrink */
-        .details-total-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 5px; /* Keep padding */
-            border-top: 1px solid var(--border-color); /* Keep border */
-            font-weight: 600;
-            font-size: 1.0rem;
-            flex-shrink: 0; /* IMPORTANT: Prevent this row from shrinking */
-        }
-                /* --- Styling for the Average Row --- */
-        .details-average-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline; /* Align text baselines */
-            padding: 10px 5px 15px 5px; /* Slightly less top padding than total, more bottom */
-            /* No border-top needed, separation comes from placement */
-            font-size: 0.9rem; /* Slightly smaller than total */
-            flex-shrink: 0; /* Prevent shrinking */
-            margin-top: -5px; /* Pull slightly closer to the total row above it */
-        }
-
-        .average-label {
-            color: var(--text-secondary); /* Use secondary color for the label */
-            margin-right: 15px;
-            white-space: nowrap;
-        }
-
-        .average-value {
-            color: var(--text-primary); /* Primary color for the value */
-            font-weight: 500;
-            white-space: nowrap;
-            text-align: right;
-        }
-
-        .average-diff {
-            font-size: 0.8rem; /* Smaller font for the difference */
-            margin-left: 8px; /* Space it from the average amount */
-            font-weight: 400; /* Normal weight */
-        }
-
-        .average-diff.positive {
-            color: #E8684A; /* Example: Use a theme color (Subtle Red/Orange for over average) */
-            /* Or define and use --danger-color variable */
-        }
-
-        .average-diff.negative {
-            color: #61DDAA; /* Example: Use a theme color (Subtle Green for under average) */
-            /* Or define and use --success-color variable */
-        }
-        
-        /* --- End Category Details Layout --- */
-
-
-        /* --- Transaction List Item Styles (Single Line) --- */
-        .transaction-list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;    /* Align text baselines */
-            padding: 8px 5px;         /* Adjust vertical padding if needed */
-            border-bottom: 1px solid var(--border-color);
-            line-height: 1.5;         /* Adjust line height if needed */
-            overflow: hidden;         /* Prevent content spill */
-        }
-        .transaction-list-item:last-child { border-bottom: none; }
-
-        /* Container for Date, Description, Location */
-        .transaction-left-col {
-            display: flex;            /* Arrange items in a row */
-            align-items: baseline;    /* Align text baselines */
-            flex-grow: 1;             /* Allow this column to take available space */
-            margin-right: 15px;       /* Space before amount */
-            overflow: hidden;         /* Hide overflow within this column */
-            gap: 8px;                 /* Space between Date, Desc, Location */
-        }
-
-        .transaction-date-short {
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-            flex-shrink: 0;           /* Don't let date shrink */
-            white-space: nowrap;      /* Prevent date wrapping */
-            min-width: 50px;          /* Ensure minimum space for date */
-        }
-
-        .transaction-description-short {
-            color: var(--text-primary);
-            font-size: 0.85rem;
-            font-weight: 500;
-            overflow: hidden;         /* Required for ellipsis */
-            white-space: nowrap;      /* Required for ellipsis */
-            text-overflow: ellipsis;  /* Add ... if too long */
-            /* Use originalDescription in title if available */
-        }
-
-        .transaction-location-inline {
-            font-size: 0.75rem;       /* Smaller font size */
-            color: var(--text-secondary); /* Dimmer color */
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            flex-shrink: 1;           /* Allow location to shrink if space is needed */
-        }
-
-        .transaction-amount-short {
-            color: var(--text-primary);
-            font-weight: 500;
-            white-space: nowrap;
-            flex-shrink: 0;           /* Don't let amount shrink */
-            text-align: right;
-            font-size: 0.85rem;
-        }
-        /* --- End Transaction Item Styles --- */
-
-        .no-expenses-message { color: var(--text-secondary); font-style: italic; margin-top: 20px; text-align: center; font-size: 0.9rem; padding: 20px; }
-
-        /* --- Scrollbar, Tooltip --- */
-        ::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #444c58; border-radius: 4px; border: 2px solid var(--bg-card); } ::-webkit-scrollbar-thumb:hover { background: #555e6d; }
-        div.chartjs-tooltip { background: var(--bg-base); border-radius: 6px; color: var(--text-primary); opacity: 1; pointer-events: none; position: absolute; transform: translate(-50%, -115%); transition: all .1s ease; padding: 10px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.35); border: 1px solid var(--border-color); font-family: var(--font-family); font-size: 13px; z-index: 10; min-width: 120px; } div.chartjs-tooltip table { margin: 0px; width: 100%; } div.chartjs-tooltip th { font-weight: 600; padding-bottom: 6px; text-align: left; border-bottom: 1px solid var(--border-color); margin-bottom: 6px; display: block; color: var(--text-primary);} div.chartjs-tooltip td { border-width: 0; padding: 3px 0; display: flex; align-items: center; color: var(--text-primary);} div.chartjs-tooltip span.tooltip-swatch { border-width: 0px; margin-right: 8px; height: 10px; width: 10px; border-radius: 3px; display: inline-block; }
-
-
-        /* --- Controls, Core Layout (Modify/Add Styles) --- */
         .main-content-header-controls {
-            display: flex;
-            justify-content: space-between; /* Keeps nav left, total right */
-            align-items: center; /* Vertically center align items */
-            flex-shrink: 0;
-            min-height: var(--header-height); /* Ensure header has consistent height */
+            flex-direction: column; /* Stack controls */
+            align-items: stretch; /* Full width */
+            gap: 15px;
+            min-height: unset;
         }
         .month-navigator {
-            display: flex;
-            align-items: center; /* Vertically center buttons and display container */
-            gap: 12px;
+            justify-content: center;
+            order: 1;
         }
-        .month-navigator button { /* Styles unchanged */ }
-        .month-navigator button:hover:not(:disabled) { /* Styles unchanged */ }
-        .month-navigator button:disabled { /* Styles unchanged */ }
-
-        /* NEW: Container for the two-line display */
         .month-display-container {
-            display: flex;
-            flex-direction: column; /* Stack main and sub vertically */
-            align-items: center;    /* Center align text */
-            min-width: 250px;       /* <<< SET MINIMUM WIDTH to prevent shifting */
-            text-align: center;     /* Ensure text is centered */
-            line-height: 1.3;       /* Adjust line height for spacing */
-            padding: 0 5px;         /* Add slight horizontal padding if needed */
+            min-width: auto;
         }
-
-        /* NEW: Style for the main line (e.g., Nov 2024) */
-        .month-display-main {
-            font-size: 1.1rem;      /* Slightly smaller than original for balance */
-            font-weight: 600;
-            color: var(--text-primary);
-            display: block; /* Ensure it takes full width for centering */
+        .month-display-main { font-size: 1rem; }
+        .month-display-sub { font-size: 0.7rem; }
+        .total-spend {
+            text-align: center;
+            order: 2;
+            margin-top: 0;
         }
-
-        /* NEW: Style for the sub line (e.g., Nov 22 - Dec 21, 2024) */
-        .month-display-sub {
-            font-size: 0.75rem;     /* Smaller font size */
-            font-weight: 500;
-            color: var(--text-secondary); /* Dimmer color */
-            text-transform: uppercase; /* All caps */
-            letter-spacing: 0.5px;   /* Slight letter spacing */
-            display: block; /* Ensure it takes full width for centering */
-            margin-top: 2px; /* Small space between lines */
+         .total-spend-amount { font-size: 1.4rem; }
+        .container-header {
+            padding-bottom: 10px;
+            margin-bottom: 15px;
         }
-
-        .total-spend { /* Styles unchanged */ }
-        .total-spend-label { /* Styles unchanged */ }
-        .total-spend-amount { /* Styles unchanged */ }
-
-        // Add CSS for spacing:
-        // Find the .back-button-header rule in your <style> tag and add a margin
-        /* --- Container Header & Back Button (Add margin-right) --- */
-        .back-button-header {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            background-color: transparent;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 7px 14px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 0.85rem;
-            font-weight: 500;
-            line-height: 1;
-            flex-shrink: 0;
-            margin-right: 15px; /* <<< ADD THIS LINE for spacing */
+         .container-title { font-size: 0.95rem; }
+         .back-button-header { font-size: 0.8rem; padding: 5px 10px; margin-right: 10px; }
+        .chart-wrapper {
+            min-height: 250px;
         }
-        .back-button-header svg { width: 15px; height: 15px; margin-right: 0px; }
-        .back-button-header:hover { border-color: var(--accent); color: var(--accent); background-color: rgba(0, 191, 166, 0.1); }
-
-        // Also ensure the title can shrink if needed:
-        .container-title {
-            font-size: 1.05rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 0;
-            padding-bottom: 0;
-            border-bottom: none;
-            flex-grow: 1; /* Allows it to take space */
-            flex-shrink: 1; /* Allows it to shrink if back button needs space */
-            margin-right: 10px; /* Keep existing right margin */
-            overflow: hidden; /* Optional: Hide overflow if title is very long */
-            text-overflow: ellipsis; /* Optional: Add ... if title is very long */
-            white-space: nowrap; /* Optional: Keep title on one line */
-        }
-
-/* ============================ */
-/* === MOBILE RESPONSIVENESS === */
-/* ============================ */
-
-@media (max-width: 768px) {
-/* --- Add mobile-specific styles INSIDE this block --- */
-
-/* --- General Layout & Spacing Adjustments --- */
-:root {
-    /* Redefine variables for smaller screens */
-    --content-padding: 15px; /* Less padding overall */
-    --card-padding: 15px;    /* Less padding inside cards */
-    --header-height: auto;   /* Allow header height to adjust */
-}
-
-body {
-    font-size: 13px; /* Slightly smaller base font */
-    /* Remove left padding that was making space for the sidebar */
-    padding-left: 0px !important;
-    /* Ensure flex direction is row (it should be by default, but good to be sure) */
-    display: flex;
-    flex-direction: row;
-}
-
-.main-area {
-    /* Ensure main area takes full width since sidebar is gone */
-    padding-left: 0; /* Override any potential inline style or specific rule */
-    width: 100%;     /* Occupy full viewport width */
-}
-
-.main-content-wrapper {
-    padding: var(--content-padding); /* Use the reduced padding */
-    gap: var(--content-padding);     /* Use the reduced gap */
-}
-
-/* --- Hide Sidebar --- */
-.sidebar {
-    display: none; /* Completely hide the sidebar element */
-}
-/* Note: If you wanted a collapsed sidebar instead, you would REMOVE 'display: none;'
-   and instead set 'width: var(--sidebar-width-collapsed);' and ensure
-   body has 'padding-left: var(--sidebar-width-collapsed);'. The overrides
-   for 'body.sidebar-expanded' from the previous example would also be needed. */
-
-/* --- Stack Main Columns --- */
-.dashboard-core {
-    grid-template-columns: 1fr; /* Change to a single column */
-    gap: var(--content-padding); /* Use the reduced gap */
-}
-
-/* --- Reorder Containers on Mobile --- */
-.category-list-container {
-    /* Assign a lower order number to make it appear first */
-    order: 1;
-}
-
-.graph-container {
-    /* Assign a higher order number to make it appear second */
-    /* Note: You could potentially remove this if you also decide
-       to hide the graph-container later using display: none */
-    order: 2;
-}
-
-/* Ensure the parent container is set up for ordering (it already is) */
-.dashboard-core {
-    display: grid; /* Order property works with grid */
-    grid-template-columns: 1fr; /* Keep it as a single column */
-    gap: var(--content-padding);
-}
-
-
-/* --- Header Controls Adjustment --- */
-.main-content-header-controls {
-    flex-direction: column; /* Stack items vertically */
-    align-items: stretch;  /* Make items take full width */
-    gap: 20px; /* Add space between the stacked navigator and total */
-    min-height: unset; /* Remove fixed min-height if needed */
-}
-
-.month-navigator {
-    justify-content: center; /* Center the buttons and month display */
-    order: 1; /* Keep navigator first */
-}
-.month-display-container {
-     min-width: auto; /* Allow month display to shrink */
-     text-align: center;
-     padding: 0 5px;
-}
-.month-display-main {
-     font-size: 1rem; /* Slightly smaller month/year */
-}
-.month-display-sub {
-     font-size: 0.7rem; /* Smaller cycle display */
-}
-.total-spend {
-    text-align: center; /* Center the total spend text */
-    order: 2; /* Place total spend below navigator */
-    margin-top: 0; /* Remove potential top margin */
-}
-.total-spend-amount {
-     font-size: 1.4rem; /* Slightly smaller total amount */
-     line-height: 1.1;
-}
-.total-spend-label {
-    font-size: 0.75rem;
-}
-
-
-/* --- Container Headers --- */
-.graph-container, .category-list-container {
+        .category-item, .transaction-list-item { padding: 10px 5px; }
+        .category-name, .transaction-description-short { font-size: 0.85rem; }
+        .category-amount, .transaction-amount-short { font-size: 0.85rem; }
+        /* ... other general mobile style adjustments ... */
     
-      padding: var(--card-padding); /* Use reduced padding */
-      min-height: 400px; /* Adjust value as needed - ensures minimum space */
-      display: flex;
-      flex-direction: column;
-      overflow: hidden; /* Prevent content spill from the container itself */
-}
-
-.graph-container, .category-list-container {
-
-.container-header {
-     padding-bottom: 10px;
-     margin-bottom: 15px;
-     flex-wrap: wrap; /* Allow button to wrap if title is long */
-}
-.container-title {
-     font-size: 0.95rem; /* Smaller container titles */
-     margin-right: 5px; /* Reduce space */
-}
-.back-button-header {
-    font-size: 0.8rem;
-    padding: 5px 10px;
-    margin-right: 10px; /* Adjust spacing */
-}
-
-/* --- Chart & List Adjustments --- */
-.chart-wrapper {
-    min-height: 250px; /* Allow chart to be shorter */
-}
-
-.category-item, .transaction-list-item {
-    padding-top: 10px; /* Slightly more vertical space for tapping */
-    padding-bottom: 10px;
-    padding-left: 5px;
-    padding-right: 5px;
-}
-.category-name, .transaction-description-short {
-    font-size: 0.85rem; /* Adjust if needed */
-}
-.category-amount, .transaction-amount-short {
-    font-size: 0.85rem; /* Adjust if needed */
-}
-.category-item svg.feather {
-    margin-right: 10px; /* Slightly less space */
-}
-.transaction-date-short {
-    min-width: 40px; /* Less space for date */
-    font-size: 0.75rem;
-}
-.transaction-location-inline {
-    font-size: 0.7rem;
-}
-
-/* Adjust transaction details */
-.details-total-row, .details-average-row {
-    padding-left: 5px;
-    padding-right: 5px;
-    font-size: 0.9rem;
-}
-.details-average-row {
-    font-size: 0.85rem;
-}
-.average-label {
-    margin-right: 10px;
-}
-.average-diff {
-    font-size: 0.75rem;
-    margin-left: 5px;
-}
-
-/* --- Tooltip (Ensure it fits) --- */
-div.chartjs-tooltip {
-    min-width: 100px; /* Allow tooltip to be narrower */
-    padding: 8px 10px;
-    font-size: 12px;
-}
-div.chartjs-tooltip th {
-    padding-bottom: 4px;
-    margin-bottom: 4px;
-}
-div.chartjs-tooltip td {
-    padding: 2px 0;
-}
-
-
-/* Also ensure the chart wrapper inside has appropriate height */
-.chart-wrapper {
-    min-height: 250px; /* Reiterate or adjust the chart's own min height */
-    flex-grow: 1; /* Allow wrapper to grow if container has extra space */
-    position: relative; /* Keep for absolute positioning of canvas */
-}
-
-</style>
+        /* --- Core Layout: Single Column --- */
+        .dashboard-core {
+            grid-template-columns: 1fr; /* Single column */
+        }
+    
+        /* --- STATE-BASED VISIBILITY (Mobile) --- */
+    
+        /* --- Mobile Overview State (Default - No body class) --- */
+        /* Container 1 (Graph): HIDDEN */
+        /* Container 2 (List/Insights): Shows Category List, Hides Insights/Details */
+        .graph-container {
+            display: none;
+            order: 1; /* Keep order definition */
+        }
+        .category-list-container {
+            display: flex; /* Show this container */
+            order: 1; /* Show it first */
+            min-height: 400px; /* Ensure space */
+        }
+        .insights-area { /* Keep insights hidden on mobile overview */
+            display: none;
+        }
+        #category-content > .category-list {
+            display: block; /* SHOW category list UL */
+        }
+        #category-content > .category-details {
+            display: none; /* Hide transaction details wrapper */
+        }
+    
+        /* --- Mobile Detail State (body.detail-view-active) --- */
+        /* Container 1 (Graph): SHOWS Month Graph */
+        /* Container 2 (List/Insights): SHOWS Transaction Details, Hides Insights/List */
+        body.detail-view-active .graph-container {
+            display: flex !important; /* SHOW Graph Container */
+            order: 1; /* Graph first */
+            min-height: 400px;
+        }
+        body.detail-view-active .category-list-container {
+            display: flex !important; /* Ensure List Container is also shown */
+            order: 2; /* List second */
+            min-height: 350px;
+        }
+        body.detail-view-active .insights-area {
+            display: none !important; /* Keep insights hidden */
+        }
+        body.detail-view-active #category-content > .category-list {
+            display: none !important; /* Hide category list UL */
+        }
+        body.detail-view-active #category-content > .category-details {
+            display: flex !important; /* SHOW transaction details wrapper */
+        }
+         /* Ensure placeholder is also hidden when in mobile detail view */
+         body.detail-view-active .insights-placeholder {
+             display: none;
+         }
+    
+    } /* End @media */
+    
+    
+    /* --- NEW CSS FOR INSIGHTS --- */
+    /* --- Insights Area & Cards --- */
+    .insights-area {
+        /* Holds multiple insight cards */
+        padding: 5px; /* Add some padding */
+        margin-bottom: 15px; /* Space before category list/details */
+        flex-shrink: 0; /* Prevent shrinking */
+        /* Visibility controlled by media queries below */
+        display: none; /* Default to hidden */
+    }
+    
+    .insight-card {
+        background-color: var(--bg-surface); /* Slightly different background */
+        border-radius: var(--card-radius);
+        padding: 15px;
+        margin-bottom: 12px; /* Space between cards */
+        border: 1px solid var(--border-color);
+        transition: background-color 0.2s ease;
+        font-size: 0.9rem;
+    }
+    
+    .insight-card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        color: var(--text-secondary);
+    }
+    .insight-card-header svg {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        color: var(--accent); /* Use accent for insight icon */
+    }
+    .insight-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+    }
+    
+    .insight-card-body {
+        margin-bottom: 10px;
+    }
+    .insight-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 5px;
+        line-height: 1.2;
+    }
+    .insight-comparison {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+    }
+    .insight-diff {
+        font-weight: 500;
+        margin-left: 6px; /* Space before the difference */
+    }
+    .insight-diff.positive { color: #E8684A; /* Red/Orange for spending more */ }
+    .insight-diff.negative { color: #61DDAA; /* Green for spending less */ }
+    
+    
+    .insight-card-footer {
+        font-size: 0.75rem;
+        color: var(--text-tertiary);
+        text-align: right;
+    }
+    
+    /* --- REFINED Visibility Control --- */
+    
+    /* Desktop Overview: Show insights */
+    @media (min-width: 769px) {
+        body:not(.detail-view-active) .insights-area {
+            display: block; /* Show insights container on desktop overview */
+        }
+        body:not(.detail-view-active) #category-content > .category-list,
+        body:not(.detail-view-active) #category-content > .category-details {
+            display: none; /* Hide category list AND details on desktop overview */
+        }
+         /* Also hide the generic placeholder if insights are shown */
+        body:not(.detail-view-active) .insights-placeholder {
+            display: none;
+        }
+    
+         /* Desktop Detail: Hide insights */
+         body.detail-view-active .insights-area {
+            display: none;
+        }
+    }
+    
+    /* Mobile: Already handled by the rules above and the default state in the main mobile @media query */
+    /* No changes needed here for mobile insight visibility */
+    
+    </style>
