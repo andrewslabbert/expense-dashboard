@@ -102,19 +102,9 @@
         'Other Transport', 'Other Personal & Family'
         // Explicitly EXCLUDED (among others): Fuel, Rent, Tithing, Transfers, Cell C, Spotify, Insurance, Medical Bills, Cash, Uncategorised etc.
     ]);
+    const WEEKS_TO_AVERAGE_INSIGHT = 6; // Number of weeks to use for averaging in insights
     // --- End Definition ---
 
-    // --- State ---
-
-    function getIconNameForCategory(categoryName) {
-        const mapping = categoryMappings[categoryName];
-        if (mapping && mapping.iconName) {
-            return mapping.iconName;
-        }
-        // Add more specific fallbacks if needed before the generic default
-        return categoryMappings['__DEFAULT__'].iconName || 'tag';
-
-    }
     // --- State ---
     let expenseChart = null;
     let currentViewMode = 'overview'; // 'overview' or 'detail'
@@ -122,6 +112,7 @@
     let dashboardData = {};           // Holds raw data { cycleKey: { total, details: { cat: [...] } } }
     let monthKeys = [];               // Sorted array of cycle keys
     let currentMonthIndex = -1;       // Index in monthKeys for the currently displayed cycle
+    let currentInsightWeekOffset = 0; // 0 = current week, -1 = last week, etc.
 
     // --- Helpers, Chart Defaults, Formatting ---
     const getCssVarValue = (varName) => getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
@@ -647,7 +638,10 @@ fullMonthKeys.reverse();
         // Also replace icons in the newly added insight area if needed
         const insightArea = document.getElementById('insights-area');
         if (insightArea) {
-             try { feather.replace({width: 18, height: 18}); } // Use default size for insights
+             try {
+                 // This should now cover both insight cards
+                 feather.replace({width: 18, height: 18});
+             }
              catch(e){ console.error("Feather error replacing icons in insights area:", e); }
         }
     }
@@ -749,6 +743,18 @@ fullMonthKeys.reverse();
     // --- Weekly Calculation Helper Functions ---
 
     /**
+     * Gets the date of the Monday for the week containing the given date.
+     * @param {Date} date The input date.
+     * @returns {Date} A new Date object representing midnight UTC on the Monday of that week.
+     */
+    function getMondayOfWeek(date) {
+        const dt = new Date(date); // Clone
+        const day = dt.getUTCDay(); // 0=Sunday, 1=Monday,...
+        const diff = dt.getUTCDate() - day + (day === 0 ? -6 : 1); // Adjust when Sunday
+        return new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), diff));
+    }
+
+    /**
      * Calculates the start (Monday) and end (Sunday) dates for the week containing the given date.
      * @param {Date} targetDate The date for which to find the week range. Defaults to today.
      * @param {number} weekOffset 0 for current week, -1 for previous week, etc.
@@ -834,39 +840,151 @@ fullMonthKeys.reverse();
 
 
     /**
-     * Calculates the total spending for the current and previous week for Day-to-Day categories.
-     * @returns {{currentWeekTotal: number, prevWeekTotal: number, difference: number, percentageChange: number, currentWeekRange: string}}
+     * Calculates the total spending for the target week and the week before it,
+     * based on a week offset from today.
+     * @param {number} weekOffset - 0 for current week, -1 for previous, etc.
+     * @returns {{targetWeekTotal: number, previousToTargetWeekTotal: number, difference: number, percentageChange: number, targetWeekRange: string}}
      */
-    function calculateWeeklyTotals() {
-        const today = new Date(); // Use current date to determine weeks
+    function calculateWeeklyTotals(weekOffset = 0) {
+        const today = new Date(); // Base calculations relative to today
 
-        const currentWeek = getWeekDateRange(today, 0);
-        const previousWeek = getWeekDateRange(today, -1);
+        // Get the date range for the week we actually want to display
+        const targetWeek = getWeekDateRange(today, weekOffset);
+        // Get the date range for the week *before* the target week for comparison
+        const previousToTargetWeek = getWeekDateRange(today, weekOffset - 1);
 
-        const currentWeekTxs = filterTransactionsByWeekAndCategory(currentWeek.start, currentWeek.end, DAY_TO_DAY_CATEGORIES);
-        const prevWeekTxs = filterTransactionsByWeekAndCategory(previousWeek.start, previousWeek.end, DAY_TO_DAY_CATEGORIES);
+        // Filter transactions for both weeks
+        const targetWeekTxs = filterTransactionsByWeekAndCategory(targetWeek.start, targetWeek.end, DAY_TO_DAY_CATEGORIES);
+        const previousToTargetWeekTxs = filterTransactionsByWeekAndCategory(previousToTargetWeek.start, previousToTargetWeek.end, DAY_TO_DAY_CATEGORIES);
 
-        const currentWeekTotal = currentWeekTxs.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
-        const prevWeekTotal = prevWeekTxs.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+        // Calculate totals
+        const targetWeekTotal = targetWeekTxs.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+        const previousToTargetWeekTotal = previousToTargetWeekTxs.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
 
-        const difference = currentWeekTotal - prevWeekTotal;
+        // Calculate difference and percentage change
+        const difference = targetWeekTotal - previousToTargetWeekTotal;
         let percentageChange = 0;
-        if (prevWeekTotal !== 0) {
-            percentageChange = (difference / prevWeekTotal) * 100;
-        } else if (currentWeekTotal > 0) {
-            percentageChange = 100; // Indicate increase if previous was 0 and current is positive
+        if (previousToTargetWeekTotal !== 0) {
+            percentageChange = (difference / previousToTargetWeekTotal) * 100;
+        } else if (targetWeekTotal > 0) {
+            percentageChange = 100; // Indicate increase if previous was 0 and current > 0
         }
 
         return {
-            currentWeekTotal,
-            prevWeekTotal,
+            targetWeekTotal,
+            previousToTargetWeekTotal,
             difference,
             percentageChange,
-            currentWeekRange: currentWeek.rangeString
+            targetWeekRange: targetWeek.rangeString, // Use the range of the displayed week
+            previousWeekRange: previousToTargetWeek.rangeString // Keep for potential tooltip/debug
         };
     }
 
+    /**
+     * Calculates the average "Day-to-Day" spending over the N weeks preceding a target end date.
+     * @param {Date} targetEndDate - The end date (exclusive) of the period *before* the average calculation starts. Usually the start date of the week being displayed.
+     * @param {number} numWeeks - The number of preceding weeks to average.
+     * @returns {{ averageSpend: number, weeksCount: number }}
+     */
+    function calculateAverageWeeklyVariableSpend(targetEndDate, numWeeks) {
+        let totalSpend = 0;
+        let weeksCount = 0;
+        const today = new Date(targetEndDate); // Start calculations relative to the end date provided
+
+        for (let i = 1; i <= numWeeks; i++) {
+            // Get the date range for each preceding week (-1, -2, ... -numWeeks)
+            const historicalWeek = getWeekDateRange(today, -i); // Offset relative to targetEndDate's week start
+
+            // Filter transactions for that historical week
+            const historicalWeekTxs = filterTransactionsByWeekAndCategory(
+                historicalWeek.start,
+                historicalWeek.end,
+                DAY_TO_DAY_CATEGORIES
+            );
+
+            // Add this week's total to the sum
+            const weekTotal = historicalWeekTxs.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+            totalSpend += weekTotal;
+            weeksCount++; // Count how many weeks we actually summed (might be less than numWeeks if data is limited)
+        }
+
+        const averageSpend = weeksCount > 0 ? totalSpend / weeksCount : 0;
+        return { averageSpend, weeksCount };
+    }
+
     // --- End Weekly Calculation Helper Functions ---
+
+    // --- Function to Update ONLY the Weekly Insight Card ---
+    function updateWeeklyInsightCard() {
+        if (!dashboardData || monthKeys.length === 0) return; // Need data loaded
+
+        // 1. Calculate totals for the target week (based on offset)
+        const targetWeekData = calculateWeeklyTotals(currentInsightWeekOffset);
+        const targetWeekTotal = targetWeekData.targetWeekTotal;
+        const targetWeekRange = targetWeekData.targetWeekRange;
+
+        // 2. Calculate the average of the N weeks *before* the target week
+        const targetWeekStartDate = getWeekDateRange(new Date(), currentInsightWeekOffset).start; // Get start date of the displayed week
+        const avgData = calculateAverageWeeklyVariableSpend(targetWeekStartDate, WEEKS_TO_AVERAGE_INSIGHT);
+        const averageSpend = avgData.averageSpend;
+        const avgWeeksCount = avgData.weeksCount;
+
+
+        // 3. Get DOM elements
+        const weeklyValueEl = document.getElementById('weekly-dtd-value');
+        const weeklyCompEl = document.getElementById('weekly-dtd-comparison');
+        const weeklyRangeEl = document.getElementById('weekly-dtd-range'); // Now using span in footer
+        const nextButton = document.getElementById('next-insight-week');
+        const prevButton = document.getElementById('prev-insight-week'); // Get prev button too
+
+        // 4. Update the displayed values
+        if (weeklyValueEl) weeklyValueEl.textContent = formatCurrency(targetWeekTotal);
+        if (weeklyRangeEl) weeklyRangeEl.textContent = `Week: ${targetWeekRange}`; // Display the range of the *selected* week
+
+        if (weeklyCompEl) {
+            let comparisonText = `vs Avg: ${formatCurrency(averageSpend)}`;
+            let diffText = '';
+            let diffClass = '';
+
+            if (averageSpend > 0 || targetWeekTotal > 0) { // Only calculate diff if there's something to compare
+                 const difference = targetWeekTotal - averageSpend;
+                 let percentageChange = 0;
+                 if (averageSpend !== 0) {
+                     percentageChange = (difference / averageSpend) * 100;
+                 } else if (targetWeekTotal > 0) {
+                     percentageChange = 100; // Or Infinity? 100% increase might be clearer
+                 }
+
+                 // Only show diff text if difference is meaningful
+                 if (Math.abs(difference) >= 0.01) {
+                     diffClass = difference > 0 ? 'negative' : 'positive'; // Swapped: positive is now when spending less (negative diff)
+                     diffText = `<span class="insight-diff ${diffClass}">
+                                    (${difference > 0 ? '+' : ''}${formatCurrency(difference)},
+                                     ${percentageChange.toFixed(0)}%)
+                                  </span>`;
+                     comparisonText += ` ${diffText}`;
+                 }
+            }
+            weeklyCompEl.innerHTML = comparisonText;
+        }
+
+        // 5. Update button states
+        if (nextButton) {
+            nextButton.disabled = (currentInsightWeekOffset >= 0); // Disable if viewing current week or future
+        }
+         // Optional: Disable prev button if you hit the limit of your data? Requires more logic. For now, always enabled.
+         if (prevButton) {
+             prevButton.disabled = false; // Keep enabled for now
+         }
+
+
+         // 6. Refresh icons (just in case)
+         const cardHeader = document.querySelector('#weekly-dtd-insight .insight-card-header');
+         if(cardHeader) {
+            try { feather.replace({ width: 18, height: 18 }); } catch(e){}
+         }
+    }
+    // --- End Weekly Insight Card Update Function ---
 
     // --- Core State Change Functions ---
 
@@ -987,30 +1105,11 @@ fullMonthKeys.reverse();
             displayCategoryList(processedData.displayCategories);
             // Insights placeholder visibility is handled by CSS based on screen size and body class
 
-                        // --- Calculate and Display Weekly Day-to-Day Insight ---
-            const weeklyData = calculateWeeklyTotals();
-            const weeklyValueEl = document.getElementById('weekly-dtd-value');
-            const weeklyCompEl = document.getElementById('weekly-dtd-comparison');
-            const weeklyRangeEl = document.getElementById('weekly-dtd-range');
-
-            if (weeklyValueEl) weeklyValueEl.textContent = formatCurrency(weeklyData.currentWeekTotal);
-            if (weeklyRangeEl) weeklyRangeEl.textContent = `(${weeklyData.currentWeekRange})`;
-
-            if (weeklyCompEl) {
-                let comparisonText = `vs Last Week: ${formatCurrency(weeklyData.prevWeekTotal)}`;
-                let diffText = '';
-                let diffClass = '';
-                if (Math.abs(weeklyData.difference) >= 0.01) { // Only show diff if meaningful
-                     diffClass = weeklyData.difference > 0 ? 'positive' : 'negative';
-                     diffText = `<span class="insight-diff ${diffClass}">
-                                    (${weeklyData.difference > 0 ? '+' : ''}${formatCurrency(weeklyData.difference)},
-                                     ${weeklyData.percentageChange.toFixed(0)}%)
-                                  </span>`;
-                     comparisonText += ` ${diffText}`; // Append difference
-                }
-                 weeklyCompEl.innerHTML = comparisonText; // Use innerHTML for the span
-            }
-            // --- End Weekly Insight Display ---
+            // --- Update the Weekly Insight Card ---
+            // Reset offset to 0 whenever the main monthly view changes
+            // currentInsightWeekOffset = 0; // Optional: Reset week view on month change? Or keep it where user left it? Let's keep it for now.
+            updateWeeklyInsightCard();
+            // --- End Weekly Insight Card Update ---
 
         } else if (currentViewMode === 'detail') {
             // Ensure correct body class and add back buttons
@@ -1141,6 +1240,28 @@ fullMonthKeys.reverse();
              .withSuccessHandler(onDataLoaded)
              .withFailureHandler(onDataLoadError)
              .getDataForDashboard();
+
+         // --- ADD Event Listeners for Insight Week Navigation ---
+         const prevInsightWeekBtn = document.getElementById('prev-insight-week');
+         const nextInsightWeekBtn = document.getElementById('next-insight-week');
+
+         if (prevInsightWeekBtn) {
+             prevInsightWeekBtn.addEventListener('click', () => {
+                 currentInsightWeekOffset--; // Go back one week
+                 updateWeeklyInsightCard(); // Update only the card
+             });
+         } else { console.error("Previous Insight Week button not found"); }
+
+         if (nextInsightWeekBtn) {
+             nextInsightWeekBtn.addEventListener('click', () => {
+                 if (currentInsightWeekOffset < 0) { // Only allow going forward if not at current week
+                     currentInsightWeekOffset++;
+                     updateWeeklyInsightCard(); // Update only the card
+                 }
+             });
+         } else { console.error("Next Insight Week button not found"); }
+         // --- End Insight Week Navigation Listeners ---
+
      });
     // --- End Initialize ---
 

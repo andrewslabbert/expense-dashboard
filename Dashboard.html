@@ -22,7 +22,8 @@
          <div class="sidebar-brand">Expense Tracker</div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li><a href="#" class="active"><i data-feather="grid"></i><span class="nav-text">Dashboard</span></a></li>
+                    <li><a href="#" class="active" id="view-mode-month"><i data-feather="calendar"></i><span class="nav-text">Month Cycle View</span></a></li>
+                    <li><a href="#" id="view-mode-week"><i data-feather="columns"></i><span class="nav-text">Week View</span></a></li>
                     <li><a href="#"><i data-feather="pie-chart"></i><span class="nav-text">Reports</span> <span class="coming-soon-badge">Soon</span></a></li>
                     <li><a href="#"><i data-feather="list"></i><span class="nav-text">Transactions</span> <span class="coming-soon-badge">Soon</span></a></li>
                     <li><a href="#"><i data-feather="target"></i><span class="nav-text">Budgets</span> <span class="coming-soon-badge">Soon</span></a></li>
@@ -80,21 +81,30 @@
                     <div class="insights-area" id="insights-area">
                         <!-- Insight Card 1: Weekly Day-to-Day -->
                         <div class="insight-card" id="weekly-dtd-insight">
-                            <div class="insight-card-header">
-                                <i data-feather="calendar"></i>
-                                <span class="insight-title">Weekly Variable Spending</span>
+                            <div class="insight-card-header with-nav">
+                                <div class="insight-header-main">
+                                    <i data-feather="calendar"></i>
+                                    <span class="insight-title">Weekly Variable Spending</span>
+                                </div>
+                                <div class="insight-header-nav">
+                                    <button id="prev-insight-week" class="insight-nav-button" title="Previous Week">
+                                        <i data-feather="chevron-left"></i>
+                                    </button>
+                                    <button id="next-insight-week" class="insight-nav-button" title="Next Week" disabled>
+                                        <i data-feather="chevron-right"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="insight-card-body">
                                 <div class="insight-value" id="weekly-dtd-value">--</div>
-                                <div class="insight-comparison" id="weekly-dtd-comparison">vs Last Week: --</div>
+                                <div class="insight-comparison" id="weekly-dtd-comparison">vs Avg: --</div>
                             </div>
                             <div class="insight-card-footer">
-                                Current Week <span id="weekly-dtd-range"></span>
+                                <span id="weekly-dtd-range"></span>
                             </div>
                         </div>
 
-                        <!-- Add more insight cards here later -->
-                         <div class="insights-placeholder" style="padding: 20px; text-align: center; color: var(--text-secondary); margin-top: 20px; font-style: italic;">
+                        <div class="insights-placeholder" style="padding: 20px; text-align: center; color: var(--text-secondary); margin-top: 20px; font-style: italic;">
                             (More Insights Coming Soon)
                         </div>
 
@@ -120,4 +130,5 @@
 <?!= HtmlService.createHtmlOutputFromFile('JavaScript').getContent(); ?>
 
 </body>
+</html>
 </html>

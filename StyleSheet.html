@@ -741,61 +741,101 @@
     }
     
     .insight-card {
-        background-color: var(--bg-surface); /* Slightly different background */
+        background-color: var(--bg-card);
         border-radius: var(--card-radius);
-        padding: 15px;
-        margin-bottom: 12px; /* Space between cards */
-        border: 1px solid var(--border-color);
-        transition: background-color 0.2s ease;
-        font-size: 0.9rem;
+        padding: var(--card-padding);
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px var(--shadow-color);
     }
     
     .insight-card-header {
         display: flex;
         align-items: center;
         gap: 10px;
-        margin-bottom: 12px;
-        color: var(--text-secondary);
+        margin-bottom: 15px;
     }
     .insight-card-header svg {
-        width: 18px;
-        height: 18px;
-        flex-shrink: 0;
-        color: var(--accent); /* Use accent for insight icon */
+        color: var(--accent);
     }
     .insight-title {
         font-weight: 600;
-        color: var(--text-primary);
         font-size: 0.95rem;
+        color: var(--text-primary);
     }
     
     .insight-card-body {
-        margin-bottom: 10px;
+        margin-bottom: 15px;
     }
     .insight-value {
-        font-size: 1.4rem;
-        font-weight: 700;
+        font-size: 1.5rem;
+        font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 5px;
-        line-height: 1.2;
     }
     .insight-comparison {
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         color: var(--text-secondary);
-        line-height: 1.4;
     }
     .insight-diff {
         font-weight: 500;
-        margin-left: 6px; /* Space before the difference */
     }
-    .insight-diff.positive { color: #E8684A; /* Red/Orange for spending more */ }
-    .insight-diff.negative { color: #61DDAA; /* Green for spending less */ }
-    
-    
+    .insight-diff.positive {
+        color: var(--c2); /* Green */
+    }
+    .insight-diff.negative {
+        color: var(--c5); /* Red */
+    }
     .insight-card-footer {
-        font-size: 0.75rem;
+        font-size: 0.8rem;
         color: var(--text-tertiary);
-        text-align: right;
+        border-top: 1px solid var(--border-color);
+        padding-top: 12px;
+    }
+    
+    /* --- Styles for Insight Card Navigation --- */
+    .insight-card-header.with-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .insight-header-main {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-grow: 1;
+        margin-right: 10px;
+    }
+
+    .insight-header-nav {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+
+    .insight-nav-button {
+        padding: 3px;
+        line-height: 1;
+        border-radius: 4px;
+        color: var(--text-tertiary);
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    .insight-nav-button svg {
+        width: 16px;
+        height: 16px;
+    }
+    .insight-nav-button:hover {
+        background-color: var(--hover-color);
+        color: var(--text-primary);
+    }
+    .insight-nav-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .insight-nav-button:disabled:hover {
+        background-color: transparent;
+        color: var(--text-tertiary);
     }
     
     /* --- REFINED Visibility Control --- */
